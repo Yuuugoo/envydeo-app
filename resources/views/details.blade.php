@@ -3,27 +3,32 @@
 @section('content')
     <div class="movie-info border-b border-gray-800">
         <div class="container mx-auto px-4 py-16">
-            <div class="flex items-start">
-                <img src="{{ 'https://image.tmdb.org/t/p/w500/' .$movie['poster_path'] }}" alt="series" class="w-96">
+            <div class="flex flex-row flex-wrap items-start gap-6">
+                
+                <img src="{{ 'https://image.tmdb.org/t/p/w500/' . $movie['poster_path'] }}"
+                    alt="series"
+                    class="w-32 sm:w-40 md:w-52 lg:w-96 flex-shrink-0">
 
-                <div class="ml-12 max-w-5xl">
-                    <h2 class="text-4xl font-bold mb-4">{{ $movie['title'] }}</h2>
-                    <div class="flex items-center text-sm">
-                        <span>⭐</span>
-                        <span class="ml-1">{{ $movie['vote_average'] * 10 . '%'}}</span>
-                        <span class="mx-2">|</span>
-                        <span>{{ \Carbon\Carbon::parse($movie['release_date'])->format('M d, Y') }}</span>
-                        <span class="mx-2">|</span>
-                        <span>
-                        @foreach($movie['genres'] as $genre)
-                            {{ $genre['name'] }}@if (!$loop->last), @endif
-                        @endforeach
-                        </span>
+                <div class="flex-1 min-w-[200px]">
+                    <h2 class="text-2xl md:text-4xl font-bold mb-4">{{ $movie['title'] }}</h2>
+
+                    <div class="flex flex-col md:flex-row md:items-center text-sm space-y-1 md:space-y-0 md:space-x-3">
+                        <div class="flex items-center">
+                            <span>⭐</span>
+                            <span class="ml-1">{{ $movie['vote_average'] * 10 . '%'}}</span>
+                        </div>
+                        <div>{{ \Carbon\Carbon::parse($movie['release_date'])->format('M d, Y') }}</div>
+                        <div>
+                            @foreach($movie['genres'] as $genre)
+                                {{ $genre['name'] }}@if (!$loop->last), @endif
+                            @endforeach
+                        </div>
                     </div>
 
-                    <p class="text-gray-300 mt-8">
+                    <p class="text-gray-300 mt-4 text-sm md:text-base">
                         {{ $movie['overview'] }}
                     </p>
+
 
                     <div class="mt-12">
                         <h4 class="text-white font-semibold">Featured Cast</h4>
@@ -51,7 +56,7 @@
                         @endforeach
                     </div>
                     <div class="mt-12">
-                        <h4 class="text-white font-semibold">Featured Crew</h4>
+                        <h4 class="text-white font-semibold lg:block sm:hidden">Featured Crew</h4>
                     </div>
                     <div class="flex mt-4">
                         @foreach($movie['credits']['crew'] as $crew)
@@ -63,15 +68,15 @@
                             @endif
                         @endforeach
                     </div>
-                    <div class="flex gap-5">
+                    <div class="flex flex-col md:flex-row gap-3 md:gap-5">
                         <div x-data="{ isOpen: false }" class="modal-container">
                             @if (count($movie['videos']['results']) > 0)
-                                <div class="mt-12">
+                                <div class="mt-4 md:mt-12">
                                     <button
                                         @click="isOpen = true"
-                                        class="flex items-center bg-orange-500 text-gray-900 rounded font-semibold px-5 py-4 hover:bg-orange-600 transition ease-in-out duration-150"
+                                        class="w-full md:w-auto flex items-center justify-center bg-orange-500 text-gray-900 rounded font-semibold px-4 py-3 md:px-5 md:py-4 hover:bg-orange-600 transition ease-in-out duration-150 text-sm md:text-base"
                                     >
-                                        <svg class="w-6 fill-current" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+                                        <svg class="w-5 md:w-6 fill-current" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
                                         <span class="ml-2">Play Trailer</span>
                                     </button>
                                 </div>
@@ -104,12 +109,12 @@
 
                         <div x-data="{ isOpen: false }">
                             @if (count($movie['videos']['results']) > 0)
-                                <div class="mt-12">
+                                <div class="mt-4 md:mt-12">
                                     <button
                                         @click="isOpen = true"
-                                        class="flex items-center bg-green-500 text-gray-900 rounded font-semibold px-5 py-4 hover:bg-green-600 transition ease-in-out duration-150"
+                                        class="w-full md:w-auto flex items-center justify-center bg-green-500 text-gray-900 rounded font-semibold px-4 py-3 md:px-5 md:py-4 hover:bg-green-600 transition ease-in-out duration-150 text-sm md:text-base"
                                     >
-                                        <svg class="w-6 fill-current" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
+                                        <svg class="w-5 md:w-6 fill-current" viewBox="0 0 24 24"><path d="M0 0h24v24H0z" fill="none"/><path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/></svg>
                                         <span class="ml-2">Play Movie (Server 1)</span>
                                     </button>
                                 </div>

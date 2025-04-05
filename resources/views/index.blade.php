@@ -41,9 +41,9 @@
     <!-- Top Rated Movies Section -->
 
     <div class="container mx-auto px-4 pt-16">
-        <div class="popular-movies">
+        <div class="top-rated-movies">
             <h2 class="uppercase tracking-wider text-orange-500 text-lg font-semibold mb-4">
-                Popular Movies
+                Top Rated Movies
             </h2>
             <div x-data="{ scroll: $refs.carousel }" class="relative">
 
