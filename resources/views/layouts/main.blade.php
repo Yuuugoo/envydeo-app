@@ -43,10 +43,12 @@
     @yield('content')
     @livewireScripts
     <script>
-        document.addEventListener('livewire:init', () => {
-            if (!window.Alpine) {
-                import('https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js').then(Alpine => {
-                    window.Alpine = Alpine.default;
+        document.addEventListener('DOMContentLoaded', function() {
+            if (window.Alpine) {
+                window.dispatchEvent(new CustomEvent('alpine:initialized'));
+            } else {
+                import('https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js').then(module => {
+                    window.Alpine = module.default;
                     Alpine.start();
                 });
             }
