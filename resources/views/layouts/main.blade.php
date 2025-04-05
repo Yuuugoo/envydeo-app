@@ -42,6 +42,16 @@
     </nav>
     @yield('content')
     @livewireScripts
-    @alpine
+    <script>
+        document.addEventListener('livewire:init', () => {
+            if (!window.Alpine) {
+                import('https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js').then(Alpine => {
+                    window.Alpine = Alpine.default;
+                    Alpine.start();
+                });
+            }
+        });
+    </script>
+    @stack('scripts')
 </body>
 </html>
