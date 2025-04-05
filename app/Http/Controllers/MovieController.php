@@ -33,14 +33,45 @@ class MovieController extends Controller
         ]);
     }
 
+    public function list()
+    {
+        $page = request()->get('page', 1);
+        
+        $response = Http::withToken(config('services.tmdb.token'))
+            ->get('https://api.themoviedb.org/3/movie/now_playing', [
+                'page' => $page
+            ])
+            ->json();
+        
+        $nowPlayingMovies = $response['results'];
+        $totalPages = $response['total_pages'];
+        $currentPage = $response['page'];
+        
+        $genreLists = Http::withToken(config('services.tmdb.token'))
+            ->get('https://api.themoviedb.org/3/genre/movie/list')
+            ->json()['genres'];
+
+        $genres = collect($genreLists)->mapWithKeys(function ($genre){
+                return [$genre['id'] => $genre['name']];
+            });
+            
+        return view('movies.index', [
+            'nowPlayingMovies' => $nowPlayingMovies,
+            'genres' => $genres,
+            'currentPage' => $currentPage,
+            'totalPages' => $totalPages,
+        ]);
+    }
+
     public function show($id)
     {
         $selectedMovie = Http::withToken(config('services.tmdb.token'))
             ->get('https://api.themoviedb.org/3/movie/'. $id.'?append_to_response=credits,videos,images')
-            ->json(); 
+            ->json();
 
         return view('details', [
             'movie' => $selectedMovie,
         ]);
     }
+
 }
