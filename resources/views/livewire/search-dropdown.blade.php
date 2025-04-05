@@ -6,7 +6,7 @@
             class="bg-gray-800 rounded-full w-full px-4 pl-10 py-2 focus:outline-none focus:shadow-outline text-sm"
             placeholder="Search"
             @focus="isOpen = true"
-            @keydown="isopen = true"
+            @keydown="isOpen = true"
             @keydown.escape.window="isOpen = false"
         >
         

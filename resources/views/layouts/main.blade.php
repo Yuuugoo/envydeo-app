@@ -42,5 +42,6 @@
     </nav>
     @yield('content')
     @livewireScripts
+    @alpine
 </body>
 </html>
