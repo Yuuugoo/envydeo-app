@@ -2,9 +2,9 @@
 
 @section('content')
 
-<div class="container mx-auto px-4 pt-16">
+<div class="container mx-auto px-4 pt-16 mb-10">
     <div class="latest-movies">
-        <h2 class="uppercase tracking-wider text-orange-500 text-lg font-semibold mb-4">
+        <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold mb-4">
             Latest Movies
         </h2>
     </div>
@@ -29,7 +29,7 @@
             
             @for ($i = $startPage; $i <= $endPage; $i++)
                 <a href="{{ route('movie.list', ['page' => $i]) }}" 
-                   class="join-item btn {{ $i == $currentPage ? 'bg-orange-500 hover:bg-orange-600 text-white border-orange-600' : 'bg-gray-800 hover:bg-gray-700 text-white border-gray-700' }}">
+                   class="join-item btn {{ $i == $currentPage ? 'bg-green-500 hover:bg-green-600 text-white border-green-600' : 'bg-gray-800 hover:bg-gray-700 text-white border-gray-700' }}">
                     {{ $i }}
                 </a>
             @endfor
@@ -40,7 +40,5 @@
             @endif
         </div>
     </div>
-</div>
-<div class="container mx-auto px-4 pt-16 mt-5">
 </div>
 @endsection

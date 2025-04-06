@@ -2,17 +2,17 @@
 
 @section('content')
     <div class="movie-info border-b border-gray-800">
-        <div class="container mx-auto px-4 py-16">
-            <div class="flex flex-row flex-wrap items-start gap-6">
+        <div class="container mx-auto px-4 py-8 md:py-16">
+            <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
                 
                 <img src="{{ 'https://image.tmdb.org/t/p/w500/' . $movie['poster_path'] }}"
-                    alt="series"
-                    class="w-32 sm:w-40 md:w-52 lg:w-96 flex-shrink-0">
+                    alt="{{ $movie['title'] }}"
+                    class="w-2/3 sm:w-1/2 md:w-1/3 lg:w-1/4 rounded-lg shadow-lg">
 
-                <div class="flex-1 min-w-[200px]">
-                    <h2 class="text-2xl md:text-4xl font-bold mb-4">{{ $movie['title'] }}</h2>
+                <div class="flex-1 text-center md:text-left">
+                    <h2 class="text-2xl md:text-4xl font-bold mb-2 md:mb-4">{{ $movie['title'] }}</h2>
 
-                    <div class="flex flex-col md:flex-row md:items-center text-sm space-y-1 md:space-y-0 md:space-x-3">
+                    <div class="flex flex-wrap justify-center md:justify-start items-center text-sm gap-y-1 gap-x-3">
                         <div class="flex items-center">
                             <span>⭐</span>
                             <span class="ml-1">{{ $movie['vote_average'] * 10 . '%'}}</span>
@@ -29,14 +29,11 @@
                         {{ $movie['overview'] }}
                     </p>
 
-
-                    <div class="mt-12">
-                        <h4 class="text-white font-semibold">Featured Cast</h4>
-                    </div>
-                    <div class="flex mt-4">
-                        @foreach($movie['credits']['cast'] as $cast)
-                            @if($loop->index < 5)
-                                <div class="mr-8">
+                    <div class="mt-8 md:mt-12">
+                        <h4 class="text-white font-semibold text-center md:text-left">Featured Cast</h4>
+                        <div class="flex flex-wrap justify-center md:justify-start mt-4 gap-4">
+                            @foreach($movie['credits']['cast'] as $cast)
+                                @if($loop->index < 5)
                                     <div class="flex items-center space-x-2">
                                         @php
                                             $avatar = $cast['profile_path']
@@ -45,15 +42,15 @@
                                         @endphp
                                         <img src="{{ $avatar }}"
                                         alt="{{ $cast['name'] }}"
-                                        class="rounded-full w-12 h-12 object-cover ring-2 ring-gray-700 shadow-md" />
+                                        class="rounded-2xl hidden md:block md:w-12 md:h-12 object-cover ring-2 ring-gray-700 shadow-md" />
                                         <div>
-                                            <div>{{ $cast['name'] }}</div>
-                                            <div class="text-sm text-gray-400">{{ $cast['character'] }}</div>
+                                            <div class="text-sm md:text-base">{{ $cast['name'] }}</div>
+                                            <div class="text-xs md:text-sm text-gray-400">{{ $cast['character'] }}</div>
                                         </div>
                                     </div>
-                                </div>
-                            @endif
-                        @endforeach
+                                @endif
+                            @endforeach
+                        </div>
                     </div>
                     <div class="mt-12">
                         <h4 class="text-white font-semibold lg:block sm:hidden">Featured Crew</h4>
