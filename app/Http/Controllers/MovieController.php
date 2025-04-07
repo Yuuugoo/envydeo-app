@@ -61,7 +61,7 @@ class MovieController extends Controller
             return $this->getVisuallyImpressiveMovies();
         });
         
-        dump($moviesWithDetails);
+        // dump($moviesWithDetails);
         return view('index', [
             'popularMovies' => $popularMovies,
             'genres' => $genres,
