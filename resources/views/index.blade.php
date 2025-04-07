@@ -77,7 +77,7 @@
      @keydown.right.window="nextSlide()"
      @keydown.left.window="prevSlide()">
     
-    <div class="carousel w-full h-full relative">
+    <div class="carousel w-full pb-96 md:pb-48 lg:pb-0 md:h-full relative">
         @foreach($moviesWithDetails as $key => $movie)
             <div 
                 class="carousel-item w-full relative transition-opacity duration-500"
@@ -95,7 +95,7 @@
 
                 <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent"></div>
 
-                <div class="absolute bottom-8 left-8 text-white max-w-2xl space-y-4 z-10">
+                <div class="absolute max-w-xl mt-64 md:mt-72 lg:mt-0 left-6 lg:bottom-8 lg:left-8 text-white md:max-w-2xl space-y-4 z-10">
                     <span class="bg-gray-900 px-3 py-1 rounded-full text-xs font-semibold">{{ $movie['media_type']}}</span>
                     <h2 class="text-3xl mt-3 font-bold">{{ $movie['title'] }}</h2>
                     <p class="text-sm text-gray-300">
@@ -103,10 +103,13 @@
                         {{ \Carbon\Carbon::parse($movie['release_date'])->format('Y') }} •
                         {{ implode(' • ', $movie['genres']) }}
                     </p>
-                    <p class="text-sm text-gray-200">
+                    <p class="block md:hidden text-sm text-gray-200">
+                        {{ \Illuminate\Support\Str::limit($movie['overview'], 200) }}
+                    </p>
+                    <p class="hidden md:block text-sm text-gray-200">
                         {{ \Illuminate\Support\Str::limit($movie['overview'], 500) }}
                     </p>
-                    <div class="flex flex-wrap gap-4 mt-4">
+                    <div class="md:flex md:flex-wrap gap-4 mt-4">
                         <button 
                             @click.prevent="openMovieModal(@js($movie))" 
                             class="btn gap-2 bg-green-600 hover:bg-green-800 text-white px-6 py-2 rounded-box font-semibold"
@@ -140,7 +143,7 @@
             </div>
         @endforeach
 
-        <div class="absolute bottom-0 lg:bottom-8 right-2 lg:right-8 flex justify-center gap-2">
+        <div class="absolute flex top-56 right-7 md:top-150 lg:top-130 md:right-8 justify-center gap-2">
             @foreach($moviesWithDetails as $key => $movie)
                 <label class="radio-container cursor-pointer">
                     <input 
@@ -267,7 +270,7 @@
                 genres: {{ json_encode($genres) }},
                 getChunkSize() {
                     if (window.innerWidth < 640) return 1;
-                    if (window.innerWidth < 768) return 3;
+                    if (window.innerWidth < 811) return 3;
                     return 5;
                 },
                 chunks: [],
@@ -379,7 +382,7 @@
                 genres: {{ json_encode($genres) }},
                 getChunkSize() {
                     if (window.innerWidth < 640) return 1;
-                    if (window.innerWidth < 768) return 3;
+                    if (window.innerWidth < 811) return 3;
                     return 5;
                 },
                 chunks: [],
