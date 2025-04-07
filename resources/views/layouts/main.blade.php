@@ -9,7 +9,7 @@
     @livewireStyles
 </head>
 <body class="font-sans bg-gray-900 text-white">
-    <nav class="border-b border-gray-800"> 
+    <nav class="bg-transparent lg:sticky top-0 border-b border-gray-700 w-full shadow-lg z-50">
         <div class="container mx-auto flex flex-col md:flex-row items-center justify-between px-4 py-6">
             <ul class="flex flex-col md:flex-row items-center">
                 <li>
