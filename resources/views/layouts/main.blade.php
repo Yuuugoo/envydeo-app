@@ -9,7 +9,7 @@
     @livewireStyles
 </head>
 <body class="font-sans bg-gray-900 text-white">
-    <nav class="bg-transparent lg:sticky top-0 border-b border-gray-700 w-full shadow-lg z-50">
+    <nav class="bg-transparent w-full z-[100] md:absolute md:top-0 md:-left-5 lg:left-28 md:max-w-screen-xl">
         <div class="container mx-auto flex flex-col md:flex-row items-center justify-between px-4 py-6">
             <ul class="flex flex-col md:flex-row items-center">
                 <li>
@@ -21,13 +21,13 @@
                     </a>
                 </li>
                 <li class="md:ml-16 mt-3 md:mt-0">
-                    <a href=" {{ route('movie.index') }}" class="hover:text-gray-300">Home</a>
+                    <a href=" {{ route('movie.index') }}" class="hover:text-green-300">Home</a>
                 </li>
                 <li class="md:ml-6 mt-3 md:mt-0">
-                    <a href=" {{ route('movie.list') }}" class="hover:text-gray-300">Movies</a>
+                    <a href=" {{ route('movie.list') }}" class="hover:text-green-300">Movies</a>
                 </li>
                 <li class="md:ml-6 mt-3 md:mt-0">
-                    <a href=" {{ route('show.list') }}" class="hover:text-gray-300">TV Shows</a>
+                    <a href=" {{ route('show.list') }}" class="hover:text-green-300">TV Shows</a>
                 </li>
             </ul>
             <div class="flex flex-col md:flex-row items-center">

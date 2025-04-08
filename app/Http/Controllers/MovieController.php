@@ -56,7 +56,6 @@ class MovieController extends Controller
         
 
         // This means once the data is cached, it will serve the same data for 24 hours without calling the API again.
-
         $moviesWithDetails = Cache::remember('visual_movies', 60 * 24, function () {
             return $this->getVisuallyImpressiveMovies();
         });
@@ -106,8 +105,37 @@ class MovieController extends Controller
             ->get('https://api.themoviedb.org/3/movie/'. $id.'?append_to_response=credits,videos,images')
             ->json();
 
+        $genres = collect($selectedMovie['genres'])->pluck('name')->toArray();
+
+        $selectedMovieDetails = ([
+            'media_type' => 'Movie',
+            'genres' => $genres,
+        ]);
+
+        $recommendedMovie = Http::withToken(config('services.tmdb.token'))
+            ->get('https://api.themoviedb.org/3/movie/'. $id.'/recommendations')
+            ->json()['results'];
+
+        $similarMovie = Http::withToken(config('services.tmdb.token'))
+            ->get('https://api.themoviedb.org/3/movie/'. $id.'/similar')
+            ->json()['results'];
+
+        // dump($recommendedMovie);
+
+        $genreLists = Http::withToken(config('services.tmdb.token'))
+            ->get('https://api.themoviedb.org/3/genre/movie/list')
+            ->json()['genres'];
+        
+        $genres = collect($genreLists)->mapWithKeys(function ($genre){
+            return [$genre['id'] => $genre['name']];
+        });    
+
         return view('details', [
             'movie' => $selectedMovie,
+            'selectedMovieDetails' => $selectedMovieDetails,
+            'genres' => $genres,
+            'similarMovie' => $similarMovie,
+            'recommendedMovie' => $recommendedMovie,
         ]);
     }
 
@@ -115,25 +143,25 @@ class MovieController extends Controller
     private function getVisuallyImpressiveMovies()
     {
         // Visual-heavy genres: Sci-fi (878), Adventure (12), Fantasy (14), Action (28)
-        $visualGenres = '878,12,14,28';
+        $visualGenres = '878,12,14,10749';
         
         // First, fetch Korean movies with high production value
-        $koreanMoviesResponse = Http::withToken(config('services.tmdb.token'))
-            ->get('https://api.themoviedb.org/3/discover/movie', [
-                'sort_by' => 'popular.desc',
-                'with_original_language' => 'ko', // Korean language filter
-                'page' => 1,
-                'include_adult' => false
-            ]);
-        
-        // // Fetch standard visual movies (original query)
-        // $visualMoviesResponse = Http::withToken(config('services.tmdb.token'))
+        // $koreanMoviesResponse = Http::withToken(config('services.tmdb.token'))
         //     ->get('https://api.themoviedb.org/3/discover/movie', [
-        //         'sort_by' => 'popularity.desc',
-        //         'with_genres' => $visualGenres,
+        //         'sort_by' => 'popular.desc',
+        //         'with_original_language' => 'ko', // Korean language filter
         //         'page' => 1,
         //         'include_adult' => false
         //     ]);
+        
+        // // Fetch standard visual movies (original query)
+        $visualMoviesResponse = Http::withToken(config('services.tmdb.token'))
+            ->get('https://api.themoviedb.org/3/discover/movie', [
+                'sort_by' => 'popularity.desc',
+                'with_genres' => $visualGenres,
+                'page' => 1,
+                'include_adult' => false
+            ]);
         
         // Fetch zombie movies using a keyword filter (update the keyword id as needed)
         $zombieMoviesResponse = Http::withToken(config('services.tmdb.token'))
@@ -145,23 +173,14 @@ class MovieController extends Controller
         
         // Combine all movie results from the three queries
         $potentialMovies = array_merge(
-            $koreanMoviesResponse->json()['results'],
-            // $visualMoviesResponse->json()['results'],
+            // $koreanMoviesResponse->json()['results'],
+            $visualMoviesResponse->json()['results'],
             $zombieMoviesResponse->json()['results']
         );
-        // Fetch second page for additional variety from visual movies
-        $page2Response = Http::withToken(config('services.tmdb.token'))
-            ->get('https://api.themoviedb.org/3/discover/movie', [
-                'sort_by' => 'popularity.desc',
-                'with_genres' => $visualGenres,
-                'page' => 2,
-                'include_adult' => false
-            ]);
-        
+
         // Combine all results together
         $allPotentialMovies = array_merge(
             $potentialMovies, 
-            // $page2Response->json()['results']
         );
         
         // Shuffle the combined results

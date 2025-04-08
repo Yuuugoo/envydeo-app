@@ -1,83 +1,83 @@
 @extends('layouts.main')
 
 @section('content')
-<div class="relative lg:-mt-28 lg:h-screen lg:max-h-[38rem] h-full" 
+<div class="relative md:-mt-2 lg:-mt-28 lg:h-screen lg:max-h-[38rem] h-full" 
      x-data="{
-         currentSlide: 0,
-         totalSlides: {{ count($moviesWithDetails) }},
-         autoplayInterval: null,
-         isAutoplay: true,
-         anyModalOpen: false,
-         activeMovie: null,
-         activeTrailerKey: null,
+        currentSlide: 0,
+        totalSlides: {{ count($moviesWithDetails) }},
+        autoplayInterval: null,
+        isAutoplay: true,
+        anyModalOpen: false,
+        activeMovie: null,
+        activeTrailerKey: null,
 
-         nextSlide() {
-             if (!this.anyModalOpen) {
-                 this.currentSlide = (this.currentSlide + 1) % this.totalSlides;
-             }
-         },
+        nextSlide() {
+            if (!this.anyModalOpen) {
+                this.currentSlide = (this.currentSlide + 1) % this.totalSlides;
+            }
+        },
+        
+        prevSlide() {
+            if (!this.anyModalOpen) {
+                this.currentSlide = (this.currentSlide - 1 + this.totalSlides) % this.totalSlides;
+            }
+        },
+        
+        goToSlide(index) {
+            if (!this.anyModalOpen) {
+                this.currentSlide = index;
+                this.resetAutoplay();
+            }
+        },
+        
+        startAutoplay() {
+            if (this.isAutoplay && !this.anyModalOpen) {
+                this.autoplayInterval = setInterval(() => {
+                    this.nextSlide();
+                }, 5000);
+            }
+        },
+        
+        resetAutoplay() {
+            clearInterval(this.autoplayInterval);
+            this.startAutoplay();
+        },
+        
+        toggleAutoplay() {
+            this.isAutoplay = !this.isAutoplay;
+            if (this.isAutoplay) {
+                this.startAutoplay();
+            } else {
+                clearInterval(this.autoplayInterval);
+            }
+        },
          
-         prevSlide() {
-             if (!this.anyModalOpen) {
-                 this.currentSlide = (this.currentSlide - 1 + this.totalSlides) % this.totalSlides;
-             }
-         },
-         
-         goToSlide(index) {
-             if (!this.anyModalOpen) {
-                 this.currentSlide = index;
-                 this.resetAutoplay();
-             }
-         },
-         
-         startAutoplay() {
-             if (this.isAutoplay && !this.anyModalOpen) {
-                 this.autoplayInterval = setInterval(() => {
-                     this.nextSlide();
-                 }, 5000);
-             }
-         },
-         
-         resetAutoplay() {
-             clearInterval(this.autoplayInterval);
-             this.startAutoplay();
-         },
-         
-         toggleAutoplay() {
-             this.isAutoplay = !this.isAutoplay;
-             if (this.isAutoplay) {
-                 this.startAutoplay();
-             } else {
-                 clearInterval(this.autoplayInterval);
-             }
-         },
-         
-         openMovieModal(movie) {
-             this.anyModalOpen = true;
-             this.activeMovie = movie;
-             clearInterval(this.autoplayInterval);
-         },
-         
-         openTrailerModal(movie) {
-             this.anyModalOpen = true;
-             this.activeTrailerKey = movie.trailer_key;
-             clearInterval(this.autoplayInterval);
-         },
-         
-         closeModals() {
-             this.anyModalOpen = false;
-             this.activeMovie = null;
-             this.activeTrailerKey = null;
-             if (this.isAutoplay) {
-                 this.startAutoplay();
-             }
-         }
+        openMovieModal(movie) {
+            this.anyModalOpen = true;
+            this.activeMovie = movie;
+            clearInterval(this.autoplayInterval);
+        },
+        
+        openTrailerModal(movie) {
+            this.anyModalOpen = true;
+            this.activeTrailerKey = movie.trailer_key;
+            clearInterval(this.autoplayInterval);
+        },
+        
+        closeModals() {
+            this.anyModalOpen = false;
+            this.activeMovie = null;
+            this.activeTrailerKey = null;
+            if (this.isAutoplay) {
+                this.startAutoplay();
+            }
+        }
      }"
      x-init="startAutoplay()"
      @keydown.right.window="nextSlide()"
      @keydown.left.window="prevSlide()">
     
-    <div class="carousel w-full pb-96 md:pb-48 lg:pb-0 md:h-full relative">
+    <div class="carousel w-full pb-[36rem] md:pb-48 lg:pb-0 md:h-full relative">
         @foreach($moviesWithDetails as $key => $movie)
             <div 
                 class="carousel-item w-full relative transition-opacity duration-500"
@@ -95,7 +95,7 @@
 
                 <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent"></div>
 
-                <div class="absolute max-w-xl mt-64 md:mt-72 lg:mt-0 left-6 lg:bottom-8 lg:left-8 text-white md:max-w-2xl space-y-4 z-10">
+                <div class="absolute max-w-xl mt-64 md:mt-72 lg:mt-0 left-4 right-4 lg:bottom-8 lg:left-32 lg:right-0 text-white md:max-w-2xl space-y-4 z-10">
                     <span class="bg-gray-900 px-3 py-1 rounded-full text-xs font-semibold">{{ $movie['media_type']}}</span>
                     <h2 class="text-3xl mt-3 font-bold">{{ $movie['title'] }}</h2>
                     <p class="text-sm text-gray-300">
@@ -109,7 +109,7 @@
                     <p class="hidden md:block text-sm text-gray-200">
                         {{ \Illuminate\Support\Str::limit($movie['overview'], 500) }}
                     </p>
-                    <div class="md:flex md:flex-wrap gap-4 mt-4">
+                    <div class="flex flex-col md:flex-row gap-3 mt-3 md:gap-4 md:mt-4">
                         <button 
                             @click.prevent="openMovieModal(@js($movie))" 
                             class="btn gap-2 bg-green-600 hover:bg-green-800 text-white px-6 py-2 rounded-box font-semibold"
@@ -143,7 +143,7 @@
             </div>
         @endforeach
 
-        <div class="absolute flex top-56 right-7 md:top-150 lg:top-130 md:right-8 justify-center gap-2">
+        <div class="absolute flex top-56 right-7 md:top-150 lg:top-130 md:right-32 justify-center gap-2">
             @foreach($moviesWithDetails as $key => $movie)
                 <label class="radio-container cursor-pointer">
                     <input 
@@ -447,7 +447,11 @@
                                         <div class="absolute bottom-0 left-0 w-full bg-black bg-opacity-75 text-white p-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity rounded-b-lg">
                                             <a :href="`/movies/${movie.id}`" class="text-base md:text-lg mt-1 hover:text-gray-300 line-clamp-1" x-text="movie.title"></a>
                                             <div class="flex items-center text-xs md:text-sm">
-                                                <span>⭐</span>
+                                                <span>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-yellow-400">
+                                                        <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" />
+                                                    </svg>
+                                                </span>
                                                 <span class="ml-1" x-text="formatVoteAverage(movie.vote_average)"></span>
                                                 <span class="mx-2">•</span>
                                                 <span x-text="new Date(movie.release_date).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})"></span>
