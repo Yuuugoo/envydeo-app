@@ -77,6 +77,9 @@
                     1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
                 </svg>
             </a>
+            <a href="https://www.buymeacoffee.com/yuugoo" target="_blank">
+                <img class="w-32" src="https://cdn.buymeacoffee.com/buttons/v2/default-green.png" alt="Buy Me A Coffee" >
+            </a>
         </nav>
     </footer>
 </body>

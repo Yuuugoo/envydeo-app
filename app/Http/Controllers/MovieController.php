@@ -60,7 +60,6 @@ class MovieController extends Controller
         
 
         // This means once the data is cached, it will serve the same data for 24 hours without calling the API again.
-        Cache::forget('visual_movies');
         $moviesWithDetails = Cache::remember('visual_movies', 60 * 24, function () {
             return $this->getVisuallyImpressiveMovies();
         });
