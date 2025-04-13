@@ -2,7 +2,7 @@
 
 @section('content')
 
-<div class="container max-w-7xl ml-28 mx-auto px-4 md:pt-36 mb-10">
+<div class="container max-w-7xl lg:ml-28 mx-auto px-4 md:pt-36 mb-10">
     <div class="latest-movies">
         <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold mb-4">
             Latest Movies

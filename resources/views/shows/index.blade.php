@@ -2,7 +2,7 @@
 
 @section('content')
 
-<div class="container mx-auto px-4 md:pt-36 mb-10 max-w-7xl ml-28">
+<div class="container mx-auto px-4 md:pt-36 mb-10 max-w-3xl md:max-w-5xl lg:max-w-7xl lg:ml-28">
     <div class="latest-movies">
         <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold mb-4">
             Latest TV Shows
