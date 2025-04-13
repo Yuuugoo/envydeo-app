@@ -12,4 +12,4 @@ Route::get('/movies/{id}', [MovieController::class, 'show'])->name('movie.show')
 
 
 Route::get('/shows', [ShowsController::class, 'list'])->name('show.list');
-
+Route::get('/shows/{id}', [ShowsController::class, 'show'])->name('show.show');

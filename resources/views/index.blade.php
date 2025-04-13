@@ -1,7 +1,7 @@
 @extends('layouts.main')
 
 @section('content')
-<div class="relative md:-mt-2 lg:-mt-28 lg:h-screen lg:max-h-[38rem] h-full" 
+<div class="relative md:-mt-2 lg:-mt-10 lg:h-screen lg:max-h-[38rem] h-full" 
      x-data="{
         currentSlide: 0,
         totalSlides: {{ count($moviesWithDetails) }},
@@ -89,57 +89,109 @@
                 x-transition:leave-start="opacity-100"
                 x-transition:leave-end="opacity-0"
             >
-                <img src="{{ 'https://image.tmdb.org/t/p/original/' . $movie['backdrop_path'] }}"
-                    class="w-full h-full object-cover object-center"
-                    alt="{{ $movie['title'] }}" />
+                @if($movie['media_type'] == 'TV')
+                    <img src="{{ 'https://image.tmdb.org/t/p/original/' . $movie['backdrop_path'] }}"
+                        class="w-full h-full object-cover object-center"
+                        alt="{{ $movie['name'] }}" />
 
-                <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent"></div>
+                    <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent"></div>
 
-                <div class="absolute max-w-xl mt-64 md:mt-72 lg:mt-0 left-4 right-4 lg:bottom-8 lg:left-32 lg:right-0 text-white md:max-w-2xl space-y-4 z-10">
-                    <span class="bg-gray-900 px-3 py-1 rounded-full text-xs font-semibold">{{ $movie['media_type']}}</span>
-                    <h2 class="text-3xl mt-3 font-bold">{{ $movie['title'] }}</h2>
-                    <p class="text-sm text-gray-300">
-                        {{ floor($movie['runtime'] / 60) }}h {{ $movie['runtime'] % 60 }}m •
-                        {{ \Carbon\Carbon::parse($movie['release_date'])->format('Y') }} •
-                        {{ implode(' • ', $movie['genres']) }}
-                    </p>
-                    <p class="block md:hidden text-sm text-gray-200">
-                        {{ \Illuminate\Support\Str::limit($movie['overview'], 200) }}
-                    </p>
-                    <p class="hidden md:block text-sm text-gray-200">
-                        {{ \Illuminate\Support\Str::limit($movie['overview'], 500) }}
-                    </p>
-                    <div class="flex flex-col md:flex-row gap-3 mt-3 md:gap-4 md:mt-4">
-                        <button 
-                            @click.prevent="openMovieModal(@js($movie))" 
-                            class="btn gap-2 bg-green-600 hover:bg-green-800 text-white px-6 py-2 rounded-box font-semibold"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
-                                <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm14.024-.983a1.125 1.125 0 0 1 0 1.966l-5.603 3.113A1.125 1.125 0 0 1 9 15.113V8.887c0-.857.921-1.4 1.671-.983l5.603 3.113Z" clip-rule="evenodd" />
-                            </svg>
-                            Play Now
-                        </button>
+                    <div class="absolute max-w-xl mt-64 md:mt-72 lg:mt-0 left-4 right-4 lg:bottom-8 lg:left-32 lg:right-0 text-white md:max-w-2xl space-y-4 z-10">
+                        <span class="bg-gray-900 px-3 py-1 rounded-full text-xs font-semibold">{{ $movie['media_type']}}</span>
+                        <h2 class="text-3xl mt-3 font-bold">{{ $movie['name'] }}</h2>
+                        <p class="text-sm text-gray-300">
+                            {{ $movie['number_of_seasons'] }} Season •
+                            {{ implode(' • ', $movie['genres']) }}
+                        </p>
+                        <p class="block md:hidden text-sm text-gray-200">
+                            {{ \Illuminate\Support\Str::limit($movie['overview'], 200) }}
+                        </p>
+                        <p class="hidden md:block text-sm text-gray-200">
+                            {{ \Illuminate\Support\Str::limit($movie['overview'], 500) }}
+                        </p>
+                        <div class="flex flex-col md:flex-row gap-3 mt-3 md:gap-4 md:mt-4">
+                            <a href="{{ route('show.show', $movie['id']) }}"
+                                class="btn gap-2 bg-green-600 hover:bg-green-800 text-white px-6 py-2 rounded-box font-semibold"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                                    <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm14.024-.983a1.125 1.125 0 0 1 0 1.966l-5.603 3.113A1.125 1.125 0 0 1 9 15.113V8.887c0-.857.921-1.4 1.671-.983l5.603 3.113Z" clip-rule="evenodd" />
+                                </svg>
+                                Play Now
+                            </a>
 
-                        <button 
-                            @click.prevent="openTrailerModal(@js($movie))" 
-                            class="btn gap-2 bg-white/10 hover:bg-white/20 text-white px-6 py-2 rounded-box"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
-                            </svg>
-                            Watch Trailer
-                        </button>
+                            <button 
+                                @click.prevent="openTrailerModal(@js($movie))" 
+                                class="btn gap-2 bg-white/10 hover:bg-white/20 text-white px-6 py-2 rounded-box"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
+                                </svg>
+                                Watch Trailer
+                            </button>
 
-                        {{-- Add to Watchlist currently Disabled, no user yet --}}
-                        <button class="btn btn-disabled flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-6 py-2 rounded-box border border-white/20 backdrop-blur transition">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" />
-                            </svg>
-                            Add to Watchlist
-                        </button>
+                            {{-- Add to Watchlist currently Disabled, no user yet --}}
+                            <button class="btn btn-disabled flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-6 py-2 rounded-box border border-white/20 backdrop-blur transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" />
+                                </svg>
+                                Add to Watchlist
+                            </button>
+                        </div>
                     </div>
-                </div>
+                @else
+                    <img src="{{ 'https://image.tmdb.org/t/p/original/' . $movie['backdrop_path'] }}"
+                        class="w-full h-full object-cover object-center"
+                        alt="{{ $movie['title'] }}" />
+
+                    <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent"></div>
+
+                    <div class="absolute max-w-xl mt-64 md:mt-72 lg:mt-0 left-4 right-4 lg:bottom-8 lg:left-32 lg:right-0 text-white md:max-w-2xl space-y-4 z-10">
+                        <span class="bg-gray-900 px-3 py-1 rounded-full text-xs font-semibold">{{ $movie['media_type']}}</span>
+                        <h2 class="text-3xl mt-3 font-bold">{{ $movie['title'] }}</h2>
+                        <p class="text-sm text-gray-300">
+                            {{ floor($movie['runtime'] / 60) }}h {{ $movie['runtime'] % 60 }}m •
+                            {{ \Carbon\Carbon::parse($movie['release_date'])->format('Y') }} •
+                            {{ implode(' • ', $movie['genres']) }}
+                        </p>
+                        <p class="block md:hidden text-sm text-gray-200">
+                            {{ \Illuminate\Support\Str::limit($movie['overview'], 200) }}
+                        </p>
+                        <p class="hidden md:block text-sm text-gray-200">
+                            {{ \Illuminate\Support\Str::limit($movie['overview'], 500) }}
+                        </p>
+                        <div class="flex flex-col md:flex-row gap-3 mt-3 md:gap-4 md:mt-4">
+                            <button 
+                                @click.prevent="openMovieModal(@js($movie))" 
+                                class="btn gap-2 bg-green-600 hover:bg-green-800 text-white px-6 py-2 rounded-box font-semibold"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
+                                    <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm14.024-.983a1.125 1.125 0 0 1 0 1.966l-5.603 3.113A1.125 1.125 0 0 1 9 15.113V8.887c0-.857.921-1.4 1.671-.983l5.603 3.113Z" clip-rule="evenodd" />
+                                </svg>
+                                Play Now
+                            </button>
+
+                            <button 
+                                @click.prevent="openTrailerModal(@js($movie))" 
+                                class="btn gap-2 bg-white/10 hover:bg-white/20 text-white px-6 py-2 rounded-box"
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
+                                </svg>
+                                Watch Trailer
+                            </button>
+
+                            {{-- Add to Watchlist currently Disabled, no user yet --}}
+                            <button class="btn btn-disabled flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-6 py-2 rounded-box border border-white/20 backdrop-blur transition">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" />
+                                </svg>
+                                Add to Watchlist
+                            </button>
+                        </div>
+                    </div>
+                @endif
             </div>
         @endforeach
 
@@ -270,7 +322,7 @@
                 genres: {{ json_encode($genres) }},
                 getChunkSize() {
                     if (window.innerWidth < 640) return 1;
-                    if (window.innerWidth < 811) return 3;
+                    if (window.innerWidth < 835) return 3;
                     return 5;
                 },
                 chunks: [],
@@ -309,7 +361,7 @@
             <button 
                 @click="prev" 
                 x-show="currentIndex > 0"
-                class="absolute left-0 top-1/2 transform -translate-y-1/2 bg-gray-900/80 text-white p-2 rounded-full hover:bg-gray-800"
+                class="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-gray-900/80 text-white p-2 rounded-full hover:bg-gray-800"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-24 h-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -382,7 +434,7 @@
                 genres: {{ json_encode($genres) }},
                 getChunkSize() {
                     if (window.innerWidth < 640) return 1;
-                    if (window.innerWidth < 811) return 3;
+                    if (window.innerWidth < 835) return 3;
                     return 5;
                 },
                 chunks: [],
@@ -422,7 +474,7 @@
             <button 
                 @click="prev" 
                 x-show="currentIndex > 0"
-                class="absolute left-0 top-1/2 transform -translate-y-1/2 bg-gray-900/80 text-white p-2 rounded-full hover:bg-gray-800"
+                class="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-gray-900/80 text-white p-2 rounded-full hover:bg-gray-800"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-24 h-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />

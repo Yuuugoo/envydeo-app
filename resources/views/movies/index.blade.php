@@ -2,14 +2,14 @@
 
 @section('content')
 
-<div class="container mx-auto px-4 pt-16 mb-10">
+<div class="container max-w-7xl ml-28 mx-auto px-4 md:pt-36 mb-10">
     <div class="latest-movies">
         <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold mb-4">
             Latest Movies
         </h2>
     </div>
 
-    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
+    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
         @foreach($nowPlayingMovies as $movie)
             <x-movie-card :movie="$movie" :genres="$genres" />
         @endforeach
