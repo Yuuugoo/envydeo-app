@@ -77,7 +77,7 @@
      @keydown.right.window="nextSlide()"
      @keydown.left.window="prevSlide()">
     
-    <div class="carousel w-full pb-[36rem] md:pb-48 lg:pb-0 md:h-full relative">
+    <div class="carousel w-full pb-[28rem] md:pb-10 lg:pb-0 md:h-full relative">
         @foreach($moviesWithDetails as $key => $movie)
             <div 
                 class="carousel-item w-full relative transition-opacity duration-500"
@@ -311,7 +311,7 @@
             </button>
         </div> -->
 
-<div class="container mx-auto px-4 pt-16 max-w-7xl">
+<div class="container mx-auto px-4 max-w-7xl">
     <div class="popular-movies">
         <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold mb-4">
             Popular Movies
@@ -321,12 +321,13 @@
                 movies: {{ json_encode($popularMovies) }},
                 genres: {{ json_encode($genres) }},
                 getChunkSize() {
-                    if (window.innerWidth < 640) return 1;
-                    if (window.innerWidth < 835) return 3;
+                    if (window.innerWidth < 640) return 3;
                     return 5;
                 },
                 chunks: [],
                 currentIndex: 0,
+                touchStartX: 0,
+                touchEndX: 0,
                 formatVoteAverage(vote) {
                     return (vote * 10).toFixed(0) + '%';
                 },
@@ -354,6 +355,25 @@
                     if (this.currentIndex > 0) {
                         this.currentIndex--;
                     }
+                },
+                handleTouchStart(e) {
+                    this.touchStartX = e.changedTouches[0].screenX;
+                },
+                handleTouchEnd(e) {
+                    this.touchEndX = e.changedTouches[0].screenX;
+                    this.handleSwipe();
+                },
+                handleSwipe() {
+                    const threshold = 50; // Minimum distance for swipe
+                    const swipeDistance = this.touchEndX - this.touchStartX;
+                    
+                    if (swipeDistance > threshold) {
+                        // Swiped right
+                        this.prev();
+                    } else if (swipeDistance < -threshold) {
+                        // Swiped left
+                        this.next();
+                    }
                 }
             }"
             class="relative"
@@ -361,7 +381,7 @@
             <button 
                 @click="prev" 
                 x-show="currentIndex > 0"
-                class="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-gray-900/80 text-white p-2 rounded-full hover:bg-gray-800"
+                class="hidden lg:block absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-gray-900/80 text-white p-2 rounded-full hover:bg-gray-800"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-24 h-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -372,10 +392,12 @@
                 <div 
                     class="flex transition-transform duration-300 ease-in-out"
                     :style="`transform: translateX(-${currentIndex * 100}%)`"
+                    @touchstart="handleTouchStart($event)"
+                    @touchend="handleTouchEnd($event)"
                 >
                     <template x-for="(chunk, index) in chunks" :key="index">
                         <div class="w-full flex-shrink-0">
-                            <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                            <div class="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-5 gap-4">
                                 <template x-for="(movie, movieIndex) in chunk" :key="movie.id">
                                     <div class="mt-4 md:mt-8 relative group">
                                         <a :href="`/movies/${movie.id}`">
@@ -383,23 +405,29 @@
                                                 :alt="movie.title"
                                                 class="w-full block hover:opacity-75 transition ease-in-out duration-150 rounded-lg shadow">
                                         </a>
-                                        <div class="absolute bottom-0 left-0 w-full bg-black bg-opacity-75 text-white p-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity rounded-b-lg">
-                                            <a :href="`/movies/${movie.id}`" class="text-base md:text-lg mt-1 hover:text-gray-300 line-clamp-1" x-text="movie.title"></a>
-                                            <div class="flex items-center text-xs md:text-sm">
-                                                <span>⭐</span>
-                                                <span class="ml-1" x-text="formatVoteAverage(movie.vote_average)"></span>
-                                                <span class="mx-2">•</span>
-                                                <span x-text="new Date(movie.release_date).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})"></span>
-                                            </div>
-                                            <div class="text-xs mt-1 text-gray-300 line-clamp-1">
-                                                <template x-for="(genreId, genreIndex) in movie.genre_ids" :key="genreId">
+                                        <div class="hidden md-block">
+                                            <div class="absolute bottom-0 left-0 w-full bg-black bg-opacity-75 text-white p-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity rounded-b-lg">
+                                                <a :href="`/movies/${movie.id}`" class="text-base md:text-lg mt-1 hover:text-gray-300 line-clamp-1" x-text="movie.title"></a>
+                                                <div class="flex items-center text-xs md:text-sm">
                                                     <span>
-                                                        <span x-text="genres[genreId]"></span>
-                                                        <template x-if="genreIndex < movie.genre_ids.length - 1">
-                                                            <span>, </span>
-                                                        </template>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-yellow-400">
+                                                            <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" />
+                                                        </svg>
                                                     </span>
-                                                </template>
+                                                    <span class="ml-1" x-text="formatVoteAverage(movie.vote_average)"></span>
+                                                    <span class="mx-2">•</span>
+                                                    <span x-text="new Date(movie.release_date).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})"></span>
+                                                </div>
+                                                <div class="text-xs mt-1 text-gray-300 line-clamp-1">
+                                                    <template x-for="(genreId, genreIndex) in movie.genre_ids" :key="genreId">
+                                                        <span>
+                                                            <span x-text="genres[genreId]"></span>
+                                                            <template x-if="genreIndex < movie.genre_ids.length - 1">
+                                                                <span>, </span>
+                                                            </template>
+                                                        </span>
+                                                    </template>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -413,17 +441,26 @@
             <button 
                 @click="next" 
                 x-show="currentIndex < chunks.length - 1"
-                class="absolute right-0 top-1/2 transform -translate-y-1/2 bg-gray-900/80 text-white p-2 rounded-full hover:bg-gray-800"
+                class="hidden lg:block absolute right-0 top-1/2 transform -translate-y-1/2 bg-gray-900/80 text-white p-2 rounded-full hover:bg-gray-800"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-24 h-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
             </button>
+
+            <div class="flex justify-center mt-4 lg:hidden">
+                <template x-for="(chunk, index) in chunks" :key="index">
+                    <div 
+                        class="w-2 h-2 mx-1 rounded-full transition-all duration-200" 
+                        :class="currentIndex === index ? 'bg-green-600 scale-125' : 'bg-gray-400'"
+                    ></div>
+                </template>
+            </div>
         </div>
     </div>
 </div>
 
-<div class="container mx-auto px-4 pt-16  max-w-7xl">
+<div class="container mx-auto px-4 pt-16 max-w-7xl">
     <div class="top-rated-movies">
         <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold mb-4">
             Top Rated Movies
@@ -433,12 +470,14 @@
                 movies: {{ json_encode($topRatedMovies) }},
                 genres: {{ json_encode($genres) }},
                 getChunkSize() {
-                    if (window.innerWidth < 640) return 1;
-                    if (window.innerWidth < 835) return 3;
+                    if (window.innerWidth < 640) return 3;
+                    
                     return 5;
                 },
                 chunks: [],
                 currentIndex: 0,
+                touchStartX: 0,
+                touchEndX: 0,
                 formatVoteAverage(vote) {
                     return (vote * 10).toFixed(0) + '%';
                 },
@@ -466,15 +505,33 @@
                     if (this.currentIndex > 0) {
                         this.currentIndex--;
                     }
+                },
+                handleTouchStart(e) {
+                    this.touchStartX = e.changedTouches[0].screenX;
+                },
+                handleTouchEnd(e) {
+                    this.touchEndX = e.changedTouches[0].screenX;
+                    this.handleSwipe();
+                },
+                handleSwipe() {
+                    const threshold = 50; // Minimum distance for swipe
+                    const swipeDistance = this.touchEndX - this.touchStartX;
+                    
+                    if (swipeDistance > threshold) {
+                        // Swiped right
+                        this.prev();
+                    } else if (swipeDistance < -threshold) {
+                        // Swiped left
+                        this.next();
+                    }
                 }
             }"
             class="relative"
         >
-
             <button 
                 @click="prev" 
                 x-show="currentIndex > 0"
-                class="absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-gray-900/80 text-white p-2 rounded-full hover:bg-gray-800"
+                class="hidden lg:block absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-gray-900/80 text-white p-2 rounded-full hover:bg-gray-800"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-24 h-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -485,10 +542,12 @@
                 <div 
                     class="flex transition-transform duration-300 ease-in-out"
                     :style="`transform: translateX(-${currentIndex * 100}%)`"
+                    @touchstart="handleTouchStart($event)"
+                    @touchend="handleTouchEnd($event)"
                 >
                     <template x-for="(chunk, index) in chunks" :key="index">
                         <div class="w-full flex-shrink-0">
-                            <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                            <div class="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-5 gap-4">
                                 <template x-for="(movie, movieIndex) in chunk" :key="movie.id">
                                     <div class="mt-4 md:mt-8 relative group">
                                         <a :href="`/movies/${movie.id}`">
@@ -496,27 +555,29 @@
                                                 :alt="movie.title"
                                                 class="w-full block hover:opacity-75 transition ease-in-out duration-150 rounded-lg shadow">
                                         </a>
-                                        <div class="absolute bottom-0 left-0 w-full bg-black bg-opacity-75 text-white p-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity rounded-b-lg">
-                                            <a :href="`/movies/${movie.id}`" class="text-base md:text-lg mt-1 hover:text-gray-300 line-clamp-1" x-text="movie.title"></a>
-                                            <div class="flex items-center text-xs md:text-sm">
-                                                <span>
-                                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-yellow-400">
-                                                        <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" />
-                                                    </svg>
-                                                </span>
-                                                <span class="ml-1" x-text="formatVoteAverage(movie.vote_average)"></span>
-                                                <span class="mx-2">•</span>
-                                                <span x-text="new Date(movie.release_date).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})"></span>
-                                            </div>
-                                            <div class="text-xs mt-1 text-gray-300 line-clamp-1">
-                                                <template x-for="(genreId, genreIndex) in movie.genre_ids" :key="genreId">
+                                        <div class="hidden md-block">
+                                            <div class="absolute bottom-0 left-0 w-full bg-black bg-opacity-75 text-white p-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity rounded-b-lg">
+                                                <a :href="`/movies/${movie.id}`" class="text-base md:text-lg mt-1 hover:text-gray-300 line-clamp-1" x-text="movie.title"></a>
+                                                <div class="flex items-center text-xs md:text-sm">
                                                     <span>
-                                                        <span x-text="genres[genreId]"></span>
-                                                        <template x-if="genreIndex < movie.genre_ids.length - 1">
-                                                            <span>, </span>
-                                                        </template>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-yellow-400">
+                                                            <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" />
+                                                        </svg>
                                                     </span>
-                                                </template>
+                                                    <span class="ml-1" x-text="formatVoteAverage(movie.vote_average)"></span>
+                                                    <span class="mx-2">•</span>
+                                                    <span x-text="new Date(movie.release_date).toLocaleDateString('en-US', {month: 'short', day: 'numeric', year: 'numeric'})"></span>
+                                                </div>
+                                                <div class="text-xs mt-1 text-gray-300 line-clamp-1">
+                                                    <template x-for="(genreId, genreIndex) in movie.genre_ids" :key="genreId">
+                                                        <span>
+                                                            <span x-text="genres[genreId]"></span>
+                                                            <template x-if="genreIndex < movie.genre_ids.length - 1">
+                                                                <span>, </span>
+                                                            </template>
+                                                        </span>
+                                                    </template>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -530,12 +591,21 @@
             <button 
                 @click="next" 
                 x-show="currentIndex < chunks.length - 1"
-                class="absolute right-0 top-1/2 transform -translate-y-1/2 bg-gray-900/80 text-white p-2 rounded-full hover:bg-gray-800"
+                class="hidden lg:block absolute right-0 top-1/2 transform -translate-y-1/2 bg-gray-900/80 text-white p-2 rounded-full hover:bg-gray-800"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-24 h-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
             </button>
+
+            <div class="flex justify-center mt-4 lg:hidden">
+                <template x-for="(chunk, index) in chunks" :key="index">
+                    <div 
+                        class="w-2 h-2 mx-1 rounded-full transition-all duration-200" 
+                        :class="currentIndex === index ? 'bg-green-600 scale-125' : 'bg-gray-400'"
+                    ></div>
+                </template>
+            </div>
         </div>
     </div>
 </div>

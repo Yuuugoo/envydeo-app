@@ -12,26 +12,33 @@ class MovieController extends Controller
     {
 
         // These are my API's for my popular and top rated carousel
-        $popularMovies = Http::withToken(config('services.tmdb.token'))
-            ->get('https://api.themoviedb.org/3/movie/popular')
-            ->json()['results'];
-
-
-        $topRatedMovies = Http::withToken(config('services.tmdb.token'))
-            ->get('https://api.themoviedb.org/3/movie/top_rated')
-            ->json()['results'];
+        $popularMovies = Cache::remember('popular_movies', 60 * 24, function () {
+            return Http::withToken(config('services.tmdb.token'))
+                ->get('https://api.themoviedb.org/3/movie/popular')
+                ->json()['results'];
+        });
         
-        $genreLists = Http::withToken(config('services.tmdb.token'))
-            ->get('https://api.themoviedb.org/3/genre/movie/list')
-            ->json()['genres'];
+        $topRatedMovies = Cache::remember('top_rated_movies', 60 * 24, function () {
+            return Http::withToken(config('services.tmdb.token'))
+                ->get('https://api.themoviedb.org/3/movie/top_rated')
+                ->json()['results'];
+        });
         
-        $genres = collect($genreLists)->mapWithKeys(function ($genre){
-            return [$genre['id'] => $genre['name']];
-        });    
+        $genres = Cache::remember('genres', 60 * 24 * 7, function () {
+            $genreLists = Http::withToken(config('services.tmdb.token'))
+                ->get('https://api.themoviedb.org/3/genre/movie/list')
+                ->json()['genres'];
+            
+            return collect($genreLists)->mapWithKeys(function ($genre){
+                return [$genre['id'] => $genre['name']];
+            });
+        });
         
-        $popularTV = Http::withToken(config('services.tmdb.token'))
-            ->get('https://api.themoviedb.org/3/trending/tv/day?')
-            ->json()['results'];
+        $popularTV = Cache::remember('popular_tv', 60 * 24, function () {
+            return Http::withToken(config('services.tmdb.token'))
+                ->get('https://api.themoviedb.org/3/trending/tv/day?')
+                ->json()['results'];
+        });
         
         // // This is the api that I used for my backdrop carousel
         // $moviesWithDetails = [];

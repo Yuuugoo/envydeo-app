@@ -46,8 +46,8 @@
 
 
 
-<!-- <h1 class="text-4xl font-bold text-white dark:text-white mb-4">Site Under Construction</h1>
-        <p class="text-xl text-white dark:text-gray-300 mb-8 max-w-lg">
+<!-- <h1 class="text-4xl font-bold text-white mb-4">Site Under Construction</h1>
+        <p class="text-xl text-white mb-8 max-w-lg">
             TV show is currently in development. <br>Please check back soon!
         </p> -->
 

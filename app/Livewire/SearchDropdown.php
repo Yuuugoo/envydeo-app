@@ -16,12 +16,11 @@ class SearchDropdown extends Component
 
         if (strlen($this->search) >= 2) {
             $token = config('services.tmdb.token');
-            
-            // Fetch TV shows and movies
+
             $tvResults = Http::withToken($token)
                 ->get('https://api.themoviedb.org/3/search/tv', [
                     'query' => $this->search,
-                    'include_adult' => false, // Exclude adult content
+                    'include_adult' => false,
                 ])
                 ->json()['results'];
 

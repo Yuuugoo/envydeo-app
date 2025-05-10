@@ -3,24 +3,32 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+
+use Spatie\MediaLibrary\HasMedia;
+use Illuminate\Notifications\Notifiable;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements HasMedia
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasUuids, InteractsWithMedia;
 
     /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
      */
+    protected $keyType = 'string';
+    public $incrementing = false;
+
+
     protected $fillable = [
         'name',
         'email',
-        'password',
+        'password', 
     ];
 
     /**
@@ -32,6 +40,7 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+
 
     /**
      * Get the attributes that should be cast.
@@ -45,4 +54,17 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('avatar')
+            ->singleFile();
+    }
+
+    public function providers() 
+    {
+        return $this->hasMany(OAuthProvider::class);
+    }
+
+
 }
