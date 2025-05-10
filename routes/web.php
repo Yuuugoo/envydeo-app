@@ -5,6 +5,7 @@ use App\Http\Controllers\MovieController;
 use App\Http\Controllers\ShowsController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\OAuthProviderController;
+use App\Http\Controllers\WatchlistController;
 
 Route::get('/', [MovieController::class, 'index'])->name('movie.index');
 Route::get('/movies', [MovieController::class, 'list'])->name('movie.list');
@@ -25,5 +26,7 @@ Route::middleware(['guest'])
         Route::get('{provider}', [OAuthProviderController::class, 'index'])->name('provider');
         Route::get('{provider}/envydeo/callback', [OAuthProviderController::class, 'store'])->name('provider.callback');
     });
+
+    Route::get('/watchlist', [WatchlistController::class, 'index'])->name('watchlist.index');
 
 require __DIR__.'/auth.php';
