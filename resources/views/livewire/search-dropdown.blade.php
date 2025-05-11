@@ -19,35 +19,36 @@
                 class="absolute right-0 w-64"
                 @click.away="inputExpanded = false; isOpen = false"
             >
-                <div class="relative">
-                    <input
-                        x-ref="searchInput"
-                        wire:model.live.debounce.500ms="search"
-                        type="text"
-                        class="bg-gray-800 rounded-full w-full px-4 pl-10 py-2 focus:outline-none focus:shadow-outline text-sm"
-                        placeholder="Search Movies & TV Shows"
-                        @focus="isOpen = true"
-                        @keydown="isOpen = true"
-                        @keydown.escape.window="inputExpanded = false; isOpen = false"
-                    >
-                    
-                    <div class="absolute top-2.5 left-3">
-                        <svg class="w-4 h-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-                        </svg>
-                    </div>
+                <form wire:submit.prevent="searchAll">
+                    <div class="relative">
+                        <input
+                            x-ref="searchInput"
+                            wire:model.live="search"
+                            type="text"
+                            class="bg-gray-800 rounded-full w-full px-4 pl-10 py-2 focus:outline-none focus:shadow-outline text-sm"
+                            placeholder="Search Movies & TV Shows"
+                            @focus="isOpen = true"
+                            @keydown="isOpen = true"
+                            @keydown.escape.window="inputExpanded = false; isOpen = false"
+                        >
+                        
+                        <div class="absolute top-2.5 left-3">
+                            <svg class="w-4 h-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                            </svg>
+                        </div>
 
-                    <div wire:loading class="absolute right-3 top-1">
-                        <div class="loading loading-dots"></div>
+                        <div wire:loading class="absolute right-3 top-1">
+                            <div class="loading loading-dots"></div>
+                        </div>
                     </div>
-                </div>
+                </form>
 
                 @if(strlen($search) >= 2)
                     <div class="absolute bg-gray-800 text-sm rounded w-full mt-2 z-50 max-h-64 md:max-h-96 overflow-y-auto" 
                         x-show.transition.opacity="isOpen"
                         @keydown.escape="isOpen = false"
                     >
-                        <!-- Results content - unchanged -->
                         @if($searchResults->count() > 0)
                             <ul>
                                 @foreach($searchResults as $result)
@@ -98,6 +99,16 @@
                                     </li>
                                 @endforeach
                             </ul>
+                            @if($searchResults->count() >= 4)
+                                <div class="px-3 py-3 text-center border-t border-gray-700">
+                                    <a 
+                                        href="{{ route('search.results', ['query' => $search]) }}" 
+                                        class="text-blue-400 hover:text-blue-300 transition"
+                                    >
+                                        View all results for "{{ $search }}"
+                                    </a>
+                                </div>
+                            @endif
                         @else
                             <div class="px-3 py-3">No results for "{{ $search }}"</div>
                         @endif

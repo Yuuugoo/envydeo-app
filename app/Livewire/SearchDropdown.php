@@ -5,10 +5,15 @@ namespace App\Livewire;
 use Livewire\Component;
 use Illuminate\Support\Facades\Http;
 
-
 class SearchDropdown extends Component
 {
     public $search = '';
+    public $isSearching = false;
+
+    public function updatedSearch()
+    {
+        $this->isSearching = true;
+    }
 
     public function render()
     {
@@ -17,36 +22,35 @@ class SearchDropdown extends Component
         if (strlen($this->search) >= 2) {
             $token = config('services.tmdb.token');
 
-            $tvResults = Http::withToken($token)
-                ->get('https://api.themoviedb.org/3/search/tv', [
+            $results = Http::withToken($token)
+                ->get('https://api.themoviedb.org/3/search/multi', [
                     'query' => $this->search,
                     'include_adult' => false,
                 ])
-                ->json()['results'];
+                ->json();
 
-            $movieResults = Http::withToken($token)
-                ->get('https://api.themoviedb.org/3/search/movie', [
-                    'query' => $this->search,
-                    'include_adult' => false,
-                ])
-                ->json()['results'];
-
-            $tvResults = array_map(function ($item) {
-                return array_merge($item, ['media_type' => 'tv']);
-            }, $tvResults);
-
-            $movieResults = array_map(function ($item) {
-                return array_merge($item, ['media_type' => 'movie']);
-            }, $movieResults);
-
-            $searchResults = collect(array_merge($tvResults, $movieResults))
-                ->sortByDesc('popularity')
-                ->take(12);
+            if (isset($results['results'])) {
+                $searchResults = collect($results['results'])
+                    ->filter(function ($item) {
+                        return in_array($item['media_type'], ['tv', 'movie']);
+                    })
+                    ->sortByDesc('popularity')
+                    ->take(4)
+                    ->values();
+            }
         }
+
+        $this->isSearching = false;
 
         return view('livewire.search-dropdown', [
             'searchResults' => $searchResults
         ]);
-        
+    }
+
+    public function searchAll()
+    {
+        if (strlen($this->search) >= 2) {
+            return redirect()->route('search.results', ['query' => $this->search]);
+        }
     }
 }

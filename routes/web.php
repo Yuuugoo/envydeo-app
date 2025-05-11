@@ -3,15 +3,18 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MovieController;
 use App\Http\Controllers\ShowsController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\OAuthProviderController;
 use App\Http\Controllers\WatchlistController;
+use App\Http\Controllers\OAuthProviderController;
 
 Route::get('/', [MovieController::class, 'index'])->name('movie.index');
 Route::get('/movies', [MovieController::class, 'list'])->name('movie.list');
 Route::get('/movies/{id}', [MovieController::class, 'show'])->name('movie.show');
 Route::get('/shows', [ShowsController::class, 'list'])->name('show.list');
 Route::get('/shows/{id}', [ShowsController::class, 'show'])->name('show.show');
+
+Route::get('/search', [SearchController::class, 'results'])->name('search.results');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

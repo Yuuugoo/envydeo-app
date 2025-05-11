@@ -34,8 +34,7 @@
                 <a href="{{ route('watchlist.index') }}" class="hover:text-green-300">Watchlist</a>
             </li>
         </ul>
-        
-        <!-- Search and auth buttons -->
+
         <div class="flex flex-row items-center ml-auto xl:ml-0">
             <div class="xl:mr-5">
                 <livewire:search-dropdown/>
@@ -58,7 +57,6 @@
     </div>
 </nav>
 
-<!-- Drawer component -->
 <div class="drawer xl:hidden">
     <input id="my-drawer" type="checkbox" class="drawer-toggle" />
     <div class="drawer-side z-[200]">
