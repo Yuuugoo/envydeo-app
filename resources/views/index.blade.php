@@ -182,13 +182,7 @@
                                 Watch Trailer
                             </button>
 
-                            {{-- Add to Watchlist currently Disabled, no user yet --}}
-                            <button class="btn btn-disabled flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-6 py-2 rounded-box border border-white/20 backdrop-blur transition">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" />
-                                </svg>
-                                Add to Watchlist
-                            </button>
+                            <livewire:add-watchlist :tmdb-id="$movie['id']" />
                         </div>
                     </div>
                 @endif
@@ -313,7 +307,7 @@
 
 <div class="container mx-auto px-4 max-w-7xl">
     <div class="popular-movies">
-        <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold mb-4">
+        <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold">
             Popular Movies
         </h2>
         <div
@@ -322,7 +316,8 @@
                 genres: {{ json_encode($genres) }},
                 getChunkSize() {
                     if (window.innerWidth < 640) return 3;
-                    return 5;
+                    else if (window.innerWidth < 1280) return 5;
+                    return 6;
                 },
                 chunks: [],
                 currentIndex: 0,
@@ -381,14 +376,15 @@
             <button 
                 @click="prev" 
                 x-show="currentIndex > 0"
-                class="hidden lg:block absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-gray-900/80 text-white p-2 rounded-full hover:bg-gray-800"
+                class="hidden lg:flex items-center justify-center absolute -left-5 top-1/2 transform -translate-y-1/2 z-10 
+                    btn btn-circle btn-outline shadow-lg hover:scale-105 transition duration-200"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-24 h-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-14 h-14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
             </button>
             
-            <div class="overflow-hidden px-4">
+            <div class="overflow-hidden px-4 py-4">
                 <div 
                     class="flex transition-transform duration-300 ease-in-out"
                     :style="`transform: translateX(-${currentIndex * 100}%)`"
@@ -397,13 +393,13 @@
                 >
                     <template x-for="(chunk, index) in chunks" :key="index">
                         <div class="w-full flex-shrink-0">
-                            <div class="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-5 gap-4">
+                            <div class="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
                                 <template x-for="(movie, movieIndex) in chunk" :key="movie.id">
-                                    <div class="mt-4 md:mt-8 relative group">
+                                    <div class="mt-4 relative group">
                                         <a :href="`/movies/${movie.id}`">
                                             <img :src="`https://image.tmdb.org/t/p/w500/${movie.poster_path}`"
                                                 :alt="movie.title"
-                                                class="w-full block hover:opacity-75 transition ease-in-out duration-150 rounded-lg shadow">
+                                                class="w-full block transform transition-all duration-300 ease-in-out hover:scale-105 hover:border-2 hover:border-green-600 rounded-lg shadow">
                                         </a>
                                         <div class="hidden md-block">
                                             <div class="absolute bottom-0 left-0 w-full bg-black bg-opacity-75 text-white p-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity rounded-b-lg">
@@ -441,9 +437,10 @@
             <button 
                 @click="next" 
                 x-show="currentIndex < chunks.length - 1"
-                class="hidden lg:block absolute right-0 top-1/2 transform -translate-y-1/2 bg-gray-900/80 text-white p-2 rounded-full hover:bg-gray-800"
+                class="hidden lg:flex items-center justify-center absolute -right-5 top-1/2 transform -translate-y-1/2 z-10 
+                    btn btn-circle btn-outline shadow-lg hover:scale-105 transition duration-200"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-24 h-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-14 h-14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
             </button>
@@ -460,9 +457,9 @@
     </div>
 </div>
 
-<div class="container mx-auto px-4 pt-16 max-w-7xl">
+<div class="container mx-auto px-4 max-w-7xl">
     <div class="top-rated-movies">
-        <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold mb-4">
+        <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold">
             Top Rated Movies
         </h2>
         <div
@@ -471,8 +468,8 @@
                 genres: {{ json_encode($genres) }},
                 getChunkSize() {
                     if (window.innerWidth < 640) return 3;
-                    
-                    return 5;
+                    else if (window.innerWidth < 1280) return 5;
+                    return 6;
                 },
                 chunks: [],
                 currentIndex: 0,
@@ -531,14 +528,15 @@
             <button 
                 @click="prev" 
                 x-show="currentIndex > 0"
-                class="hidden lg:block absolute left-0 top-1/2 transform -translate-y-1/2 z-10 bg-gray-900/80 text-white p-2 rounded-full hover:bg-gray-800"
+                class="hidden lg:flex items-center justify-center absolute -left-5 top-1/2 transform -translate-y-1/2 z-10 
+                    btn btn-circle btn-outline shadow-lg hover:scale-105 transition duration-200"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-24 h-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-14 h-14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
             </button>
-            
-            <div class="overflow-hidden px-4">
+
+            <div class="overflow-hidden px-4 py-4">
                 <div 
                     class="flex transition-transform duration-300 ease-in-out"
                     :style="`transform: translateX(-${currentIndex * 100}%)`"
@@ -547,13 +545,13 @@
                 >
                     <template x-for="(chunk, index) in chunks" :key="index">
                         <div class="w-full flex-shrink-0">
-                            <div class="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-5 gap-4">
+                            <div class="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
                                 <template x-for="(movie, movieIndex) in chunk" :key="movie.id">
-                                    <div class="mt-4 md:mt-8 relative group">
+                                    <div class="mt-1 relative group">
                                         <a :href="`/movies/${movie.id}`">
                                             <img :src="`https://image.tmdb.org/t/p/w500/${movie.poster_path}`"
                                                 :alt="movie.title"
-                                                class="w-full block hover:opacity-75 transition ease-in-out duration-150 rounded-lg shadow">
+                                                class="w-full block transform transition-all duration-300 ease-in-out hover:scale-105 hover:border-2 hover:border-green-600 rounded-lg shadow">
                                         </a>
                                         <div class="hidden md-block">
                                             <div class="absolute bottom-0 left-0 w-full bg-black bg-opacity-75 text-white p-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity rounded-b-lg">
@@ -591,9 +589,10 @@
             <button 
                 @click="next" 
                 x-show="currentIndex < chunks.length - 1"
-                class="hidden lg:block absolute right-0 top-1/2 transform -translate-y-1/2 bg-gray-900/80 text-white p-2 rounded-full hover:bg-gray-800"
+                class="hidden lg:flex items-center justify-center absolute -right-5 top-1/2 transform -translate-y-1/2 z-10 
+                    btn btn-circle btn-outline shadow-lg hover:scale-105 transition duration-200"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-24 h-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-14 h-14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
             </button>
@@ -610,5 +609,6 @@
     </div>
 </div>
 
-<div class="container mx-auto px-4 pt-16 mt-5"></div>
+<div class="container mx-auto px-4 md:pt-20 lg:pt-24 max-w-3xl md:max-w-5xl lg:max-w-7xl lg:ml-28"></div>
+
 @endsection

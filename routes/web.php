@@ -11,6 +11,11 @@ use App\Http\Controllers\OAuthProviderController;
 Route::get('/', [MovieController::class, 'index'])->name('movie.index');
 Route::get('/movies', [MovieController::class, 'list'])->name('movie.list');
 Route::get('/movies/{id}', [MovieController::class, 'show'])->name('movie.show');
+Route::get('/movies/{id}/similar', [MovieController::class, 'getSimilarMovies']);
+Route::get('/movies/{id}/recommended', [MovieController::class, 'getRecommendedMovies']);
+Route::get('/movies/{id}/images', [MovieController::class, 'getMovieImages']);
+
+
 Route::get('/shows', [ShowsController::class, 'list'])->name('show.list');
 Route::get('/shows/{id}', [ShowsController::class, 'show'])->name('show.show');
 

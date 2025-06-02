@@ -104,14 +104,8 @@
                         </div>
                     </template>
                 </div>
-                
-                <!-- Add to Watchlist Button (disabled) -->
-                <button class="btn btn-disabled w-full md:w-auto flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white md:px-6 py-2 rounded-box border border-white/20 backdrop-blur transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" />
-                    </svg>
-                    Add to Watchlist
-                </button>
+
+                <livewire:add-watchlist :tmdb-id="$movie['id']" />
             </div>
         </div>
     </div>
@@ -148,84 +142,143 @@
         </div>
     </div>
 </div>
-<div  x-data="{ activeTab: 'similar' }">
-<!-- Tab navigation - styled like the first image -->
-<div class="max-w-xl mx-6 md:max-w-3xl lg:max-w-7xl md:mx-auto py-5">
-<div role="tablist" class="flex space-x-6">
-    <a role="tab" 
-    @click.prevent="activeTab = 'similar'" 
-    :class="{ 'border-b-2 border-teal-500 pb-2': activeTab === 'similar', 'text-gray-400': activeTab !== 'similar' }"
-    class="cursor-pointer text-sm font-semibold transition duration-150 text-white">
-        Recommendations
-    </a>
-    <!-- <a role="tab" 
-    @click.prevent="activeTab = 'series'" 
-    :class="{ 'border-b-2 border-teal-500 pb-2': activeTab === 'series', 'text-gray-400': activeTab !== 'series' }"
-    class="cursor-pointer text-sm font-semibold transition duration-150 text-white">
-        Same Series
-    </a> -->
-    <a role="tab" 
-    @click.prevent="activeTab = 'images'" 
-    :class="{ 'border-b-2 border-teal-500 pb-2': activeTab === 'images', 'text-gray-400': activeTab !== 'images' }"
-    class="cursor-pointer text-sm font-semibold transition duration-150 text-white">
-        Images
-    </a>
-</div>
-</div>
 
-<!-- Tab content panels -->
-<div class="mx-6 md:max-w-3xl lg:max-w-7xl md:mx-auto py-5">
-<!-- Similar Movies Tab - styled like the second image -->
-            <div x-show="activeTab === 'similar'" class="tab-panel">
-                <h2 class="text-2xl font-bold">More Like This</h2>
+<div x-data="{ 
+    activeTab: 'similar',
+    similarMovies: [],
+    recommendedMovies: [],
+    movieImages: [],
+    genres: {},
+    loading: false,
+    
+    async loadSimilarMovies() {
+        if (this.similarMovies.length > 0) return;
+        this.loading = true;
+        try {
+            const response = await fetch('/movies/{{ $movie['id'] }}/similar');
+            const data = await response.json();
+            this.similarMovies = data.similarMovie;
+            this.genres = data.genres;
+        } catch (error) {
+            console.error('Error loading similar movies:', error);
+        } finally {
+            this.loading = false;
+        }
+    },
+    
+    async loadRecommendedMovies() {
+        if (this.recommendedMovies.length > 0) return;
+        this.loading = true;
+        try {
+            const response = await fetch('/movies/{{ $movie['id'] }}/recommended');
+            const data = await response.json();
+            this.recommendedMovies = data.recommendedMovie;
+            this.genres = data.genres;
+        } catch (error) {
+            console.error('Error loading recommended movies:', error);
+        } finally {
+            this.loading = false;
+        }
+    },
+    
+    async loadMovieImages() {
+        if (this.movieImages.length > 0) return;
+        this.loading = true;
+        try {
+            const response = await fetch('/movies/{{ $movie['id'] }}/images');
+            const data = await response.json();
+            this.movieImages = data.backdrops || [];
+        } catch (error) {
+            console.error('Error loading movie images:', error);
+        } finally {
+            this.loading = false;
+        }
+    },
+    
+    async switchTab(tab) {
+        this.activeTab = tab;
+        if (tab === 'similar') {
+            await this.loadSimilarMovies();
+            await this.loadRecommendedMovies();
+        } else if (tab === 'images') {
+            await this.loadMovieImages();
+        }
+    },
+    
+    init() {
+        // Load similar and recommended movies immediately since 'similar' is the default tab
+        this.loadSimilarMovies();
+        this.loadRecommendedMovies();
+    }
+}">
+    <!-- Tab navigation -->
+    <div class="max-w-xl mx-6 md:max-w-3xl lg:max-w-7xl md:mx-auto py-5">
+        <div role="tablist" class="flex space-x-6">
+            <a role="tab" 
+                @click.prevent="switchTab('similar')" 
+                :class="{ 'border-b-2 border-teal-500 pb-2': activeTab === 'similar', 'text-gray-400': activeTab !== 'similar' }"
+                class="cursor-pointer text-sm font-semibold transition duration-150 text-white">
+                Recommendations
+            </a>
+            <a role="tab" 
+                @click.prevent="switchTab('images')" 
+                :class="{ 'border-b-2 border-teal-500 pb-2': activeTab === 'images', 'text-gray-400': activeTab !== 'images' }"
+                class="cursor-pointer text-sm font-semibold transition duration-150 text-white">
+                Images
+            </a>
+        </div>
+    </div>
+
+    <!-- Tab content panels -->
+    <div class="mx-6 md:max-w-3xl lg:max-w-7xl md:mx-auto py-5">
+        <!-- Similar Movies Tab -->
+        <div x-show="activeTab === 'similar'" class="tab-panel">
+            <div x-show="loading" class="text-center py-8">
+                <div class="text-white">Loading Recommendations <span class="loading loading-spinner loading-lg text-success"></span></div>
+            </div>
+            
+            <div x-show="!loading">
+                <h2 class="text-2xl font-bold text-white">More Like This</h2>
                 <div class="container mx-auto max-w-7xl">
-                    <div class="similar-movies">
-                        <div
-                            x-data="{
-                                movies: {{ json_encode($similarMovie) }},
-                                genres: {{ json_encode($genres) }},
-                                getChunkSize() {
-                                    if (window.innerWidth < 640) return 1;
-                                    if (window.innerWidth < 835) return 3;
-                                    return 5;
-                                },
-                                chunks: [],
-                                currentIndex: 0,
-                                formatVoteAverage(vote) {
-                                    return (vote * 10).toFixed(0) + '%';
-                                },
-                                init() {
-                                    this.updateChunks();
-                                    window.addEventListener('resize', () => this.updateChunks());
-                                },
-                                updateChunks() {
-                                    const chunkSize = this.getChunkSize();
-                                    this.chunks = [];
-
-                                    const filteredMovies = this.movies.filter(movie => movie.backdrop_path);
-
-                                    for (let i = 0; i < filteredMovies.length; i += chunkSize) {
-                                        this.chunks.push(filteredMovies.slice(i, i + chunkSize));
-                                    }
-
-                                    if (this.currentIndex >= this.chunks.length) {
-                                        this.currentIndex = this.chunks.length - 1;
-                                    }
-                                },
-                                next() {
-                                    if (this.currentIndex < this.chunks.length - 1) {
-                                        this.currentIndex++;
-                                    }
-                                },
-                                prev() {
-                                    if (this.currentIndex > 0) {
-                                        this.currentIndex--;
-                                    }
+                    <div class="similar-movies" x-data="{ 
+                        currentIndex: 0,
+                        get movies() { return similarMovies; },
+                        get filteredMovies() { return this.movies.filter(movie => movie.backdrop_path); },
+                        getChunkSize() {
+                            if (window.innerWidth < 640) return 1;
+                            if (window.innerWidth < 835) return 3;
+                            return 5;
+                        },
+                        get chunks() {
+                            const chunkSize = this.getChunkSize();
+                            const chunks = [];
+                            for (let i = 0; i < this.filteredMovies.length; i += chunkSize) {
+                                chunks.push(this.filteredMovies.slice(i, i + chunkSize));
+                            }
+                            return chunks;
+                        },
+                        formatVoteAverage(vote) {
+                            return (vote * 10).toFixed(0) + '%';
+                        },
+                        init() {
+                            window.addEventListener('resize', () => {
+                                if (this.currentIndex >= this.chunks.length) {
+                                    this.currentIndex = Math.max(0, this.chunks.length - 1);
                                 }
-                            }"
-                            class="relative"
-                        >
-
+                            });
+                        },
+                        next() {
+                            if (this.currentIndex < this.chunks.length - 1) {
+                                this.currentIndex++;
+                            }
+                        },
+                        prev() {
+                            if (this.currentIndex > 0) {
+                                this.currentIndex--;
+                            }
+                        }
+                    }">
+                        <div class="relative">
                             <button 
                                 @click="prev" 
                                 x-show="currentIndex > 0"
@@ -246,14 +299,12 @@
                                             <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-4">
                                                 <template x-for="(movie, movieIndex) in chunk" :key="movie.id">
                                                     <div class="mt-4 md:mt-8">
-                                                        
                                                         <div class="flex flex-col">
                                                             <a :href="`/movies/${movie.id}`">
                                                                 <img :src="`https://image.tmdb.org/t/p/w500/${movie.backdrop_path}`"
                                                                     :alt="movie.title"
                                                                     class="w-full block hover:opacity-75 transition ease-in-out duration-150 rounded-lg shadow">
                                                             </a>
-
                                                             <div class="text-white p-2 rounded-b-lg">
                                                                 <a :href="`/movies/${movie.id}`" class="text-base md:text-lg mt-1 hover:text-gray-300 line-clamp-1" x-text="movie.title"></a>
                                                                 <div class="flex items-center text-xs md:text-sm">
@@ -275,7 +326,6 @@
                                                                         </template>
                                                                     </div>
                                                                 </div>
-
                                                             </div>
                                                         </div>
                                                     </div>
@@ -298,54 +348,46 @@
                         </div>
                     </div>
 
-                    <h2 class="text-2xl font-bold mt-3">You Might Also Like</h2>                                             
-                    <div class="recommended-movies">
-                        <div
-                            x-data="{
-                                movies: {{ json_encode($recommendedMovie) }},
-                                genres: {{ json_encode($genres) }},
-                                getChunkSize() {
-                                    if (window.innerWidth < 640) return 1;
-                                    if (window.innerWidth < 835) return 3;
-                                    return 5;
-                                },
-                                chunks: [],
-                                currentIndex: 0,
-                                formatVoteAverage(vote) {
-                                    return (vote * 10).toFixed(0) + '%';
-                                },
-                                init() {
-                                    this.updateChunks();
-                                    window.addEventListener('resize', () => this.updateChunks());
-                                },
-                                updateChunks() {
-                                    const chunkSize = this.getChunkSize();
-                                    this.chunks = [];
-
-                                    const filteredMovies = this.movies.filter(movie => movie.backdrop_path);
-
-                                    for (let i = 0; i < filteredMovies.length; i += chunkSize) {
-                                        this.chunks.push(filteredMovies.slice(i, i + chunkSize));
-                                    }
-
-                                    if (this.currentIndex >= this.chunks.length) {
-                                        this.currentIndex = this.chunks.length - 1;
-                                    }
-                                },
-                                next() {
-                                    if (this.currentIndex < this.chunks.length - 1) {
-                                        this.currentIndex++;
-                                    }
-                                },
-                                prev() {
-                                    if (this.currentIndex > 0) {
-                                        this.currentIndex--;
-                                    }
+                    <h2 class="text-2xl font-bold mt-8 text-white">You Might Also Like</h2>
+                    <div class="recommended-movies" x-data="{ 
+                        currentIndex: 0,
+                        get movies() { return recommendedMovies; },
+                        get filteredMovies() { return this.movies.filter(movie => movie.backdrop_path); },
+                        getChunkSize() {
+                            if (window.innerWidth < 640) return 1;
+                            if (window.innerWidth < 835) return 3;
+                            return 5;
+                        },
+                        get chunks() {
+                            const chunkSize = this.getChunkSize();
+                            const chunks = [];
+                            for (let i = 0; i < this.filteredMovies.length; i += chunkSize) {
+                                chunks.push(this.filteredMovies.slice(i, i + chunkSize));
+                            }
+                            return chunks;
+                        },
+                        formatVoteAverage(vote) {
+                            return (vote * 10).toFixed(0) + '%';
+                        },
+                        init() {
+                            window.addEventListener('resize', () => {
+                                if (this.currentIndex >= this.chunks.length) {
+                                    this.currentIndex = Math.max(0, this.chunks.length - 1);
                                 }
-                            }"
-                            class="relative"
-                        >
-
+                            });
+                        },
+                        next() {
+                            if (this.currentIndex < this.chunks.length - 1) {
+                                this.currentIndex++;
+                            }
+                        },
+                        prev() {
+                            if (this.currentIndex > 0) {
+                                this.currentIndex--;
+                            }
+                        }
+                    }">
+                        <div class="relative">
                             <button 
                                 @click="prev" 
                                 x-show="currentIndex > 0"
@@ -366,14 +408,12 @@
                                             <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-4">
                                                 <template x-for="(movie, movieIndex) in chunk" :key="movie.id">
                                                     <div class="mt-4 md:mt-8">
-                                                        
                                                         <div class="flex flex-col">
                                                             <a :href="`/movies/${movie.id}`">
                                                                 <img :src="`https://image.tmdb.org/t/p/w500/${movie.backdrop_path}`"
                                                                     :alt="movie.title"
                                                                     class="w-full block hover:opacity-75 transition ease-in-out duration-150 rounded-lg shadow">
                                                             </a>
-
                                                             <div class="text-white p-2 rounded-b-lg">
                                                                 <a :href="`/movies/${movie.id}`" class="text-base md:text-lg mt-1 hover:text-gray-300 line-clamp-1" x-text="movie.title"></a>
                                                                 <div class="flex items-center text-xs md:text-sm">
@@ -395,7 +435,6 @@
                                                                         </template>
                                                                     </div>
                                                                 </div>
-
                                                             </div>
                                                         </div>
                                                     </div>
@@ -419,67 +458,48 @@
                     </div>
                 </div>
             </div>
-            <!-- Same Series Tab -->
-            <!-- <div x-show="activeTab === 'series'" class="tab-panel">
-                <h2 class="text-2xl font-bold mb-6">Same Series</h2>
-                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+        </div>
 
-                    <div class="movie">
-                        <a href="#" class="block rounded-lg overflow-hidden mb-2">
-                            <img src="/api/placeholder/240/140" alt="Movie from series" class="w-full object-cover">
-                        </a>
-                        <div class="mt-1">
-                            <a href="#" class="text-sm font-medium hover:text-gray-300">Series Movie 1</a>
-                            <div class="flex items-center text-gray-400 text-xs mt-1">
-                                <span class="text-yellow-500">★</span>
-                                <span class="ml-1">4.6</span>
-                                <span class="mx-1">|</span>
-                                <span>Action • Movie</span>
+        <!-- Images Tab with Modal -->
+        <div x-show="activeTab === 'images'" class="tab-panel" x-data="{ isOpen: false, image: '' }">
+            <div x-show="loading" class="text-center py-8">
+                <div class="text-white">Loading Images <span class="loading loading-spinner loading-lg text-success"></span></div>
+            </div>
+            
+            <div x-show="!loading" class="movie-images">
+                <div class="container mx-auto max-w-7xl">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
+                        <template x-for="(image, index) in movieImages.slice(0, 15)" :key="image.file_path">
+                            <div class="mt-8">
+                                <a
+                                    @click.prevent="
+                                        isOpen = true;
+                                        image = `https://image.tmdb.org/t/p/original/${image.file_path}`;
+                                    "
+                                    href="#"
+                                >
+                                    <img :src="`https://image.tmdb.org/t/p/w500/${image.file_path}`" alt="Movie Image" class="hover:opacity-75 transition ease-in-out duration-150">
+                                </a>
                             </div>
-                        </div>
+                        </template>
                     </div>
-                </div>
-            </div> -->
 
-            <!-- Images Tab with Modal -->
-            <div x-show="activeTab === 'images'" class="tab-panel" x-data="{ isOpen: false, image: '' }">
-                <div class="movie-images" x-data="{ isOpen: false, image: ''}">
-                    <div class="container mx-auto max-w-7xl">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-                            @foreach ($movie['images']['backdrops'] as $image)
-                                @if ($loop->index < 15)
-                                    <div class="mt-8">
-                                        <a
-                                            @click.prevent="
-                                                isOpen = true
-                                                image='{{ 'https://image.tmdb.org/t/p/original/'.$image['file_path'] }}'
-                                            "
-                                            href="#"
-                                        >
-                                            <img src="{{ 'https://image.tmdb.org/t/p/w500/'.$image['file_path'] }}" alt="image1" class="hover:opacity-75 transition ease-in-out duration-150">
-                                        </a>
-                                    </div>
-                                @endif
-                            @endforeach
-                        </div>
-
-                        <div
-                            style="background-color: rgba(0, 0, 0, .5);"
-                            class="fixed top-5 left-0 w-full py-96 h-80 flex items-center shadow-lg overflow-y-auto z-50"
-                            x-show="isOpen"
-                        >
-                            <div class="container mx-auto lg:px-32 rounded-lg overflow-y-auto">
-                                <div class="bg-gray-900 rounded">
-                                    <div class="flex justify-end pr-4 pt-2">
-                                        <button
-                                            @click="isOpen = false"
-                                            @keydown.escape.window="isOpen = false"
-                                            class="text-3xl leading-none hover:text-gray-300">&times;
-                                        </button>
-                                    </div>
-                                    <div class="modal-body px-8 py-8">
-                                        <img :src="image" alt="poster">
-                                    </div>
+                    <div
+                        style="background-color: rgba(0, 0, 0, .5);"
+                        class="fixed top-5 left-0 w-full py-96 h-80 flex items-center shadow-lg overflow-y-auto z-50"
+                        x-show="isOpen"
+                    >
+                        <div class="container mx-auto lg:px-32 rounded-lg overflow-y-auto">
+                            <div class="bg-gray-900 rounded">
+                                <div class="flex justify-end pr-4 pt-2">
+                                    <button
+                                        @click="isOpen = false"
+                                        @keydown.escape.window="isOpen = false"
+                                        class="text-3xl leading-none hover:text-gray-300">&times;
+                                    </button>
+                                </div>
+                                <div class="modal-body px-8 py-8">
+                                    <img :src="image" alt="poster">
                                 </div>
                             </div>
                         </div>
@@ -490,45 +510,4 @@
     </div>
 </div>
 
-    <!-- <div class="movie-images" x-data="{ isOpen: false, image: ''}">
-        <div class="container mx-auto px-4 py-16">
-            <h2 class="text-4xl font-semibold">Images</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-                @foreach ($movie['images']['backdrops'] as $image)
-                    <div class="mt-8">
-                        <a
-                            @click.prevent="
-                                isOpen = true
-                                image='{{ 'https://image.tmdb.org/t/p/original/'.$image['file_path'] }}'
-                            "
-                            href="#"
-                        >
-                            <img src="{{ 'https://image.tmdb.org/t/p/w500/'.$image['file_path'] }}" alt="image1" class="hover:opacity-75 transition ease-in-out duration-150">
-                        </a>
-                    </div>
-                @endforeach
-            </div>
-
-            <div
-                style="background-color: rgba(0, 0, 0, .5);"
-                class="fixed top-0 left-0 w-full h-full flex items-center shadow-lg overflow-y-auto"
-                x-show="isOpen"
-            >
-                <div class="container mx-auto lg:px-32 rounded-lg overflow-y-auto">
-                    <div class="bg-gray-900 rounded">
-                        <div class="flex justify-end pr-4 pt-2">
-                            <button
-                                @click="isOpen = false"
-                                @keydown.escape.window="isOpen = false"
-                                class="text-3xl leading-none hover:text-gray-300">&times;
-                            </button>
-                        </div>
-                        <div class="modal-body px-8 py-8">
-                            <img :src="image" alt="poster">
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div -->
 @endsection

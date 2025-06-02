@@ -40,32 +40,6 @@ class MovieController extends Controller
                 ->json()['results'];
         });
         
-        // // This is the api that I used for my backdrop carousel
-        // $moviesWithDetails = [];
-        // foreach ($topRatedMovies as $movie) {
-        //     $details = Http::withToken(config('services.tmdb.token'))
-        //         ->get("https://api.themoviedb.org/3/movie/{$movie['id']}", [
-        //             'append_to_response' => 'videos,external_ids',
-        //         ])
-        //         ->json();
-
-        //     $movieGenres = collect($details['genres'] ?? [])
-        //         ->pluck('name')
-        //         ->toArray();
-
-        //     $trailer = collect($details['videos']['results'] ?? [])
-        //         ->firstWhere('type', 'Trailer');
-
-        //     $moviesWithDetails[] = array_merge($movie, [
-        //         'runtime' => $details['runtime'] ?? null,
-        //         'media_type' => 'Movie',
-        //         'genres' => $movieGenres,
-        //         'imdb_id' => $details['external_ids']['imdb_id'] ?? null,
-        //         'trailer_key' => $trailer['key'] ?? null,
-        //     ]);
-        // }
-        
-
         // This means once the data is cached, it will serve the same data for 24 hours without calling the API again.
         $moviesWithDetails = Cache::remember('visual_movies', 60 * 24, function () {
             return $this->getVisuallyImpressiveMovies();
@@ -114,41 +88,69 @@ class MovieController extends Controller
     public function show($id)
     {
         $selectedMovie = Http::withToken(config('services.tmdb.token'))
-            ->get('https://api.themoviedb.org/3/movie/'. $id.'?append_to_response=credits,videos,images')
+            ->get('https://api.themoviedb.org/3/movie/'. $id.'?append_to_response=credits,videos')
             ->json();
-
+            
         $genres = collect($selectedMovie['genres'])->pluck('name')->toArray();
-
         $selectedMovieDetails = ([
             'media_type' => 'Movie',
             'genres' => $genres,
         ]);
 
-        $recommendedMovie = Http::withToken(config('services.tmdb.token'))
-            ->get('https://api.themoviedb.org/3/movie/'. $id.'/recommendations')
-            ->json()['results'];
+        return view('movies.details', [
+            'movie' => $selectedMovie,
+            'selectedMovieDetails' => $selectedMovieDetails,
+        ]);
+    }
 
-        $similarMovie = Http::withToken(config('services.tmdb.token'))
+    public function getSimilarMovies($id)
+    {
+        $similarMovies = Http::withToken(config('services.tmdb.token'))
             ->get('https://api.themoviedb.org/3/movie/'. $id.'/similar')
             ->json()['results'];
-
-        // dump($recommendedMovie);
 
         $genreLists = Http::withToken(config('services.tmdb.token'))
             ->get('https://api.themoviedb.org/3/genre/movie/list')
             ->json()['genres'];
-        
+       
         $genres = collect($genreLists)->mapWithKeys(function ($genre){
             return [$genre['id'] => $genre['name']];
-        });    
+        });
 
-        return view('movies.details', [
-            'movie' => $selectedMovie,
-            'selectedMovieDetails' => $selectedMovieDetails,
-            'genres' => $genres,
-            'similarMovie' => $similarMovie,
-            'recommendedMovie' => $recommendedMovie,
+        return response()->json([
+            'similarMovie' => $similarMovies,
+            'genres' => $genres
         ]);
+    }
+
+    public function getRecommendedMovies($id)
+    {
+        $recommendedMovies = Http::withToken(config('services.tmdb.token'))
+            ->get('https://api.themoviedb.org/3/movie/'. $id.'/recommendations')
+            ->json()['results'];
+
+        $genreLists = Http::withToken(config('services.tmdb.token'))
+            ->get('https://api.themoviedb.org/3/genre/movie/list')
+            ->json()['genres'];
+       
+        $genres = collect($genreLists)->mapWithKeys(function ($genre){
+            return [$genre['id'] => $genre['name']];
+        });
+
+        return response()->json([
+            'recommendedMovie' => $recommendedMovies,
+            'genres' => $genres
+        ]);
+    }
+
+
+    public function getMovieImages($id)
+    {
+        $images = Http::withToken(config('services.tmdb.token'))
+            ->get('https://api.themoviedb.org/3/movie/'. $id.'/images')
+            ->json();
+
+        return response()->json($images);
     }
 
     // This is a sample fucntion provided by claude to make show visually appealing backdrop on my index page carousel
@@ -270,8 +272,6 @@ class MovieController extends Controller
                     'language' => $details['original_language'] ?? 'en',
                 ]);
             }
-            
-            // Stop once we have enough detailed items
             if (count($mediaWithDetails) >= 15) break;
         }
 

@@ -14,7 +14,7 @@ class MovieCard extends Component
     /**
      * Create a new component instance.
      */
-    public function __construct($movie, $genres)
+    public function __construct($movie, $genres = [])
     {
         $this->movie = $movie;
         $this->genres = $genres;

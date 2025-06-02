@@ -66,5 +66,9 @@ class User extends Authenticatable implements HasMedia
         return $this->hasMany(OAuthProvider::class);
     }
 
+    public function watchlist()
+    {
+        return $this->hasMany(Watchlist::class);
+    }
 
 }

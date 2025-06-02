@@ -30,9 +30,11 @@
             <li class="xl:ml-6">
                 <a href="{{ route('show.list') }}" class="hover:text-green-300">TV Shows</a>
             </li>
-            <li class="xl:ml-6">
-                <a href="{{ route('watchlist.index') }}" class="hover:text-green-300">Watchlist</a>
-            </li>
+            @auth
+                <li class="xl:ml-6">
+                    <a href="{{ route('watchlist.index') }}" class="hover:text-green-300">Watchlist</a>
+                </li>
+            @endauth
         </ul>
 
         <div class="flex flex-row items-center ml-auto xl:ml-0">
@@ -73,7 +75,9 @@
             <li><a class="text-base font-semibold" href="{{ route('movie.index') }}">Home</a></li>
             <li><a class="text-base font-semibold" href="{{ route('movie.list') }}">Movies</a></li>
             <li><a class="text-base font-semibold" href="{{ route('show.list') }}">TV Shows</a></li>
-            <li><a class="text-base font-semibold" href="{{ route('watchlist.index') }}">Watchlist</a></li>
+            @auth
+                <li><a class="text-base font-semibold" href="{{ route('watchlist.index') }}">Watchlist</a></li>
+            @endauth
             <div class="mt-4 md:hidden">
                 @if (Route::has('login'))
                     <div class="flex flex-col space-y-2">

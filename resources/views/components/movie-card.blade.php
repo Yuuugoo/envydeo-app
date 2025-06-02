@@ -15,9 +15,18 @@
             <span class="hidden md:block">{{ \Carbon\Carbon::parse($movie['release_date'])->format('M d, Y') }}</span>
         </div>
         <div class="text-xs mt-1 text-gray-300">
-            @foreach($movie['genre_ids'] as $genre)
-                {{ $genres->get($genre) }}@if (!$loop->last), @endif
-            @endforeach
+            @if(isset($movie['genre_ids']) && isset($genres))
+                {{-- Format from movie list endpoints --}}
+                @foreach($movie['genre_ids'] as $genreId)
+                    {{ $genres->get($genreId) }}@if (!$loop->last), @endif
+                @endforeach
+            @elseif(isset($movie['genres']))
+                {{-- Format from movie detail endpoint (like in watchlist) --}}
+                @foreach($movie['genres'] as $genre)
+                    {{ $genre['name'] }}@if (!$loop->last), @endif
+                @endforeach
+            @endif
         </div>
+
     </div>
 </div>

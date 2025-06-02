@@ -7,7 +7,7 @@
         </a>
         <p>Copyright © 2025 - All right reserved</p>
     </aside>
-    <nav class="grid-flow-col gap-4 md:place-self-center md:justify-self-end">
+    <!-- <nav class="grid-flow-col gap-4 md:place-self-center md:justify-self-end">
         
         <a href="https://github.com/Yuuugoo" target="_blank" rel="noopener noreferrer">
             <svg height="32" viewBox="0 0 16 16" width="32" xmlns="http://www.w3.org/2000/svg" fill="currentColor">
@@ -23,5 +23,5 @@
         <a href="https://www.buymeacoffee.com/yuugoo" target="_blank">
             <img class="w-32" src="https://cdn.buymeacoffee.com/buttons/v2/default-green.png" alt="Buy Me A Coffee" >
         </a>
-    </nav>
+    </nav> -->
 </footer>
