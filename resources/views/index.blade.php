@@ -1087,6 +1087,196 @@
     </div>
 </div>
 
+<!-- Genre: Animation Movies -->
+<div class="container mx-auto px-4 max-w-7xl mt-8">
+    <div class="animation-movies">
+        <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold flex space-x-0.5">
+            <span class="animate-pulse" style="animation-delay: 0s">A</span>
+            <span class="animate-pulse" style="animation-delay: 0.2s">N</span>
+            <span class="animate-pulse" style="animation-delay: 0.4s">I</span>
+            <span class="animate-pulse" style="animation-delay: 0.6s">M</span>
+            <span class="animate-pulse" style="animation-delay: 0.8s">A</span>
+            <span class="animate-pulse" style="animation-delay: 1.0s">T</span>
+            <span class="animate-pulse" style="animation-delay: 1.2s">I</span>
+            <span class="animate-pulse" style="animation-delay: 1.4s">O</span>
+            <span class="animate-pulse" style="animation-delay: 1.6s">N</span>
+        </h2>
+
+        <div
+            x-data="{
+                genreId: 16,
+                movies: [],
+                loading: true,
+                error: false,
+                chunks: [],
+                currentIndex: 0,
+                touchStartX: 0,
+                touchEndX: 0,
+                observed: false,
+                getChunkSize() {
+                    if (window.innerWidth < 640) return 3;
+                    else if (window.innerWidth < 1280) return 5;
+                    return 6;
+                },
+                formatVoteAverage(vote) {
+                    return (vote * 10).toFixed(0) + '%';
+                },
+                async loadMovies() {
+                    if (this.observed) return;
+                    this.observed = true;
+
+                    try {
+                        const response = await fetch(`/api/movies/genre/${this.genreId}`);
+                        const data = await response.json();
+
+                        if (data.success) {
+                            this.movies = data.movies;
+                            this.updateChunks();
+                            this.loading = false;
+                        } else {
+                            this.error = true;
+                            this.loading = false;
+                        }
+                    } catch (error) {
+                        console.error('Error loading genre movies:', error);
+                        this.error = true;
+                        this.loading = false;
+                    }
+                },
+                init() {
+                    const observer = new IntersectionObserver((entries) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                this.loadMovies();
+                                observer.unobserve(entry.target);
+                            }
+                        });
+                    }, { threshold: 0.1 });
+
+                    observer.observe(this.$el);
+
+                    window.addEventListener('resize', () => {
+                        if (!this.loading && this.movies.length > 0) {
+                            this.updateChunks();
+                        }
+                    });
+                },
+                updateChunks() {
+                    const chunkSize = this.getChunkSize();
+                    this.chunks = [];
+                    for (let i = 0; i < this.movies.length; i += chunkSize) {
+                        this.chunks.push(this.movies.slice(i, i + chunkSize));
+                    }
+
+                    if (this.currentIndex >= this.chunks.length) {
+                        this.currentIndex = this.chunks.length - 1;
+                    }
+                },
+                next() {
+                    if (this.currentIndex < this.chunks.length - 1) {
+                        this.currentIndex++;
+                    }
+                },
+                prev() {
+                    if (this.currentIndex > 0) {
+                        this.currentIndex--;
+                    }
+                },
+                handleTouchStart(e) {
+                    this.touchStartX = e.changedTouches[0].screenX;
+                },
+                handleTouchEnd(e) {
+                    this.touchEndX = e.changedTouches[0].screenX;
+                    this.handleSwipe();
+                },
+                handleSwipe() {
+                    const threshold = 50;
+                    const swipeDistance = this.touchEndX - this.touchStartX;
+
+                    if (swipeDistance > threshold) {
+                        this.prev();
+                    } else if (swipeDistance < -threshold) {
+                        this.next();
+                    }
+                }
+            }"
+            class="relative"
+        >
+
+            <!-- Skeleton Loader -->
+            <div x-show="loading" class="overflow-hidden px-4 py-4">
+                <div class="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
+                    <template x-for="i in 6" :key="i">
+                        <div class="mt-1">
+                            <div class="skeleton h-64 w-full rounded-lg"></div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <!-- Error State -->
+            <div x-show="error && !loading" class="text-center py-8">
+                <div class="text-red-500 mb-4">
+                    <svg class="w-12 h-12 mx-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                </div>
+                <p class="text-gray-600">Failed to load Action movies</p>
+                <button @click="loadMovies()" class="btn btn-primary mt-4">Try Again</button>
+            </div>
+
+            <!-- Movies Carousel -->
+            <button 
+                @click="prev" 
+                x-show="!loading && !error && currentIndex > 0"
+                class="hidden lg:flex items-center justify-center absolute -left-5 top-1/2 transform -translate-y-1/2 z-10 
+                    btn btn-circle btn-outline shadow-lg hover:scale-105 transition duration-200"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-14 h-14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                </svg>
+            </button>
+
+            <div x-show="!loading && !error" class="overflow-hidden px-4 py-4">
+                <div 
+                    class="flex transition-transform duration-300 ease-in-out"
+                    :style="`transform: translateX(-${currentIndex * 100}%)`"
+                    @touchstart="handleTouchStart($event)"
+                    @touchend="handleTouchEnd($event)"
+                >
+                    <template x-for="(chunk, index) in chunks" :key="index">
+                        <div class="w-full flex-shrink-0">
+                            <div class="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
+                                <template x-for="(movie, movieIndex) in chunk" :key="movie.id">
+                                    <div class="mt-1 relative group">
+                                        <a :href="`/movies/${movie.id}`">
+                                            <img :src="`https://image.tmdb.org/t/p/w500/${movie.poster_path}`"
+                                                :alt="movie.title"
+                                                class="w-full block transform transition-all duration-300 ease-in-out hover:scale-105 hover:border-2 hover:border-green-600 rounded-lg shadow"
+                                                loading="lazy">
+                                        </a>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            
+            <button 
+                @click="next" 
+                x-show="!loading && !error && currentIndex < chunks.length - 1"
+                class="hidden lg:flex items-center justify-center absolute -right-5 top-1/2 transform -translate-y-1/2 z-10 
+                    btn btn-circle btn-outline shadow-lg hover:scale-105 transition duration-200"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-14 h-14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Genre: Comedy Movies -->
 <div class="container mx-auto px-4 max-w-7xl mt-8">
     <div class="comedy-movies">
