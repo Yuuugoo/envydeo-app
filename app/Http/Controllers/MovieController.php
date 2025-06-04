@@ -3,55 +3,37 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Models\WatchProgress;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Cache;
 
 class MovieController extends Controller
 {
+
     public function index()
     {
-
-        // These are my API's for my popular and top rated carousel
-        $popularMovies = Cache::remember('popular_movies', 60 * 24, function () {
-            return Http::withToken(config('services.tmdb.token'))
-                ->get('https://api.themoviedb.org/3/movie/popular')
-                ->json()['results'];
-        });
-        
-        $topRatedMovies = Cache::remember('top_rated_movies', 60 * 24, function () {
-            return Http::withToken(config('services.tmdb.token'))
-                ->get('https://api.themoviedb.org/3/movie/top_rated')
-                ->json()['results'];
-        });
-        
         $genres = Cache::remember('genres', 60 * 24 * 7, function () {
             $genreLists = Http::withToken(config('services.tmdb.token'))
                 ->get('https://api.themoviedb.org/3/genre/movie/list')
                 ->json()['genres'];
-            
+
             return collect($genreLists)->mapWithKeys(function ($genre){
                 return [$genre['id'] => $genre['name']];
             });
         });
-        
-        $popularTV = Cache::remember('popular_tv', 60 * 24, function () {
-            return Http::withToken(config('services.tmdb.token'))
-                ->get('https://api.themoviedb.org/3/trending/tv/day?')
-                ->json()['results'];
-        });
-        
-        // This means once the data is cached, it will serve the same data for 24 hours without calling the API again.
+
         $moviesWithDetails = Cache::remember('visual_movies', 60 * 24, function () {
             return $this->getVisuallyImpressiveMovies();
         });
-        
-        // dump($moviesWithDetails);
+
+        $continueWatchingMovies = Auth::check() ? $this->getContinueWatchingMovies() : collect();
+
         return view('index', [
-            'popularMovies' => $popularMovies,
             'genres' => $genres,
-            'topRatedMovies' => $topRatedMovies,
             'moviesWithDetails' => $moviesWithDetails,
-            'popularTV' => $popularTV,
+            'continueWatchingMovies' => $continueWatchingMovies,
         ]);
     }
 
@@ -279,6 +261,157 @@ class MovieController extends Controller
     }
 
 
+    private function getContinueWatchingMovies()
+    {
+        $userId = Auth::id();
+
+        $watchProgressItems = WatchProgress::where('user_id', $userId)
+            ->where('media_type', 'movie')
+            ->where('watched', '>', 0)
+            ->whereRaw('(watched / duration) < 0.95')
+            ->orderBy('updated_at', 'desc')
+            ->limit(20)
+            ->get();
+        
+        $movieIds = $watchProgressItems->pluck('tmdb_id')->toArray();
+        
+        if (empty($movieIds)) {
+            return collect();
+        }
+
+        $movies = collect();
+        foreach ($movieIds as $movieId) {
+            try {
+                $response = Http::withToken(config('services.tmdb.token'))
+                    ->get("https://api.themoviedb.org/3/movie/{$movieId}", [
+                        'language' => 'en-US',
+                    ]);
+                
+                if ($response->successful()) {
+                    $movieData = $response->json();
+                    
+                    $watchProgress = $watchProgressItems->firstWhere('tmdb_id', $movieId);
+                    $movieData['watch_progress'] = [
+                        'watched' => $watchProgress->watched,
+                        'duration' => $watchProgress->duration,
+                        'percentage' => $watchProgress->watched_percentage,
+                        'updated_at' => $watchProgress->updated_at,
+                    ];
+                    
+                    $movies->push($movieData);
+                    Log::info('Added movie: ' . $movieData['title']);
+                } else {
+                    Log::error("TMDB API failed for movie ID {$movieId}: " . $response->body());
+                }
+            } catch (\Exception $e) {
+                Log::error("Failed to fetch movie data for ID {$movieId}: " . $e->getMessage());
+            }
+        }
+        
+        Log::info('Final movies collection count: ' . $movies->count());
+        return $movies;
+    }
+
+
+    public function loadTopRatedMovies()
+    {
+        $topRatedMovies = Cache::remember('top_movies', 60 * 24, function () {
+            return Http::withToken(config('services.tmdb.token'))
+                ->get('https://api.themoviedb.org/3/movie/top_rated')
+                ->json()['results'];
+        });
+
+        return response()->json([
+            'movies' => $topRatedMovies,
+            'success' => true
+        ]);
+
+    }
+
+    public function loadPopularMovies()
+    {
+        $popularMovies = Cache::remember('popular_movies', 60 * 24, function () {
+            return Http::withToken(config('services.tmdb.token'))
+                ->get('https://api.themoviedb.org/3/movie/popular')
+                ->json()['results'];
+        });
+
+        return response()->json([
+            'movies' => $popularMovies,
+            'success' => true
+        ]);
+    }
+
+    public function loadPopularTV()
+    {
+        $popularTV = Cache::remember('popular_tv', 60 * 24, function () {
+            return Http::withToken(config('services.tmdb.token'))
+                ->get('https://api.themoviedb.org/3/trending/tv/day?')
+                ->json()['results'];
+        });
+
+        return response()->json([
+            'shows' => $popularTV,
+            'success' => true
+        ]);
+    }
+
+    public function loadMoviesByGenre($id)
+    {
+        $cacheKey = 'genre_movies_' . $id;
+
+        $genreMovies = Cache::remember($cacheKey, 60 * 24, function () use ($id) {
+            $allMovies = [];
+
+            for ($page = 1; $page <= 4; $page++) {
+                $response = Http::withToken(config('services.tmdb.token'))
+                    ->get('https://api.themoviedb.org/3/discover/movie', [
+                        'with_genres' => $id,
+                        'sort_by' => 'popularity.desc',
+                        'language' => 'en-US',
+                        'page' => $page,
+                    ]);
+
+                if ($response->successful()) {
+                    $results = $response->json()['results'] ?? [];
+                    $allMovies = array_merge($allMovies, $results);
+                } else {
+                    break;
+                }
+
+                usleep(200000);
+            }
+
+            return $allMovies;
+        });
+
+        return response()->json([
+            'movies' => $genreMovies,
+            'success' => true,
+        ]);
+    }
+
+    public function collage()
+    {
+        $response = Http::withToken(config('services.tmdb.token'))
+            ->get('https://api.themoviedb.org/3/movie/popular', [
+                'language' => 'en-US',
+                'page' => 1,
+            ]);
+
+        if ($response->successful()) {
+            $movies = $response->json()['results'];
+            return response()->json([
+                'success' => true,
+                'movies' => $movies,
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'error' => 'Failed to fetch data from TMDB',
+        ], 500);
+    }
 
 
 }

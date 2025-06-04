@@ -7,6 +7,7 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WatchlistController;
 use App\Http\Controllers\OAuthProviderController;
+use App\Http\Controllers\WatchProgressController;
 
 Route::get('/', [MovieController::class, 'index'])->name('movie.index');
 Route::get('/movies', [MovieController::class, 'list'])->name('movie.list');
@@ -14,6 +15,14 @@ Route::get('/movies/{id}', [MovieController::class, 'show'])->name('movie.show')
 Route::get('/movies/{id}/similar', [MovieController::class, 'getSimilarMovies']);
 Route::get('/movies/{id}/recommended', [MovieController::class, 'getRecommendedMovies']);
 Route::get('/movies/{id}/images', [MovieController::class, 'getMovieImages']);
+
+Route::get('/api/movies/popular', [MovieController::class, 'loadPopularMovies']);
+Route::get('/api/movies/top-rated', [MovieController::class, 'loadTopRatedMovies']);
+Route::get('/api/movies/genre/{id}', [MovieController::class, 'loadMoviesByGenre']);
+
+Route::get('/api/movies/collage', [MovieController::class, 'collage']);
+
+Route::get('/api/tv/popular', [MovieController::class, 'loadPopularTV']);
 
 
 Route::get('/shows', [ShowsController::class, 'list'])->name('show.list');
@@ -26,6 +35,13 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
+
+Route::middleware('auth')->group(function () {
+    Route::post('/watch-progress', [WatchProgressController::class, 'store']);
+    Route::get('/watch-progress', [WatchProgressController::class, 'index']);
+    Route::delete('/watch-progress/{tmdbId}', [WatchProgressController::class, 'destroy']);
+});
+
 
 Route::middleware(['guest'])
     ->prefix('login')

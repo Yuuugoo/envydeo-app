@@ -3,7 +3,6 @@
 @section('content')
 <div class="movie-info border-b border-gray-800">
     <div class="relative lg:-mt-28 lg:h-screen lg:max-h-[38rem] h-full">
-        <!-- Movie backdrop and gradient remain unchanged -->
         <div class="w-full pb-48 md:pb-0 lg:pb-0 md:h-full relative">
             <img src="{{ 'https://image.tmdb.org/t/p/original/' . $movie['backdrop_path'] }}"
                 alt="{{ $movie['title'] }}"
@@ -11,7 +10,6 @@
         </div>
         <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent"></div>
         
-        <!-- Movie info and buttons -->
         <div class="absolute max-w-xl bottom-0 left-6 mt-64 md:mt-72 md:bottom-16 md:max-w-2xl lg:mt-0 lg:bottom-8 lg:left-28 text-white space-y-4 z-10">
             <span class="bg-gray-900 px-3 py-1 rounded-full text-xs font-semibold">{{ $selectedMovieDetails['media_type']}}</span>
             <h2 class="text-xl mt-3 md:text-4xl font-bold mb-2 md:mb-4 hover:text-green-600">{{ $movie['title'] }}</h2>
@@ -22,10 +20,133 @@
             </p>
             
             <div class="flex flex-col md:flex-row gap-4 mt-4">
-                <!-- Play Movie Button -->
-                <div x-data="{ isOpen: false }">
+                <div x-data="{ 
+                    isOpen: false,
+                    movieId: {{ $movie['id'] }},
+                    userId: '{{ auth()->id() }}',
+                    csrfToken: '{{ csrf_token() }}',
+                    lastProgressUpdate: 0,
+                    progressUpdateThrottle: 5000,
+                    resumeTimestamp: 0,
+                    
+                    async fetchWatchProgress() {
+                        if (!this.userId) {
+                            return;
+                        }
+                        
+                        try {
+                            const response = await fetch('/watch-progress', {
+                                method: 'GET',
+                                headers: {
+                                    'Accept': 'application/json',
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': this.csrfToken,
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                }
+                            });
+                            
+                            if (!response.ok) {
+                                return;
+                            }
+                            
+                            const result = await response.json();
+                            
+                            if (result.success && result.data) {
+                                const movieProgress = result.data.find(progress => 
+                                    progress.tmdb_id == this.movieId && progress.media_type === 'movie'
+                                );
+
+                                if (movieProgress) {
+                                    if (movieProgress.watched && movieProgress.duration && 
+                                        movieProgress.watched > 30 && 
+                                        movieProgress.watched < (movieProgress.duration * 0.9)) {
+                                        this.resumeTimestamp = Math.floor(movieProgress.watched);
+                                    }
+                                }
+                            }
+                        } catch (error) {
+                            console.error('Error fetching watch progress:', error);
+                        }
+                    },
+                    
+                    initProgressTracking() {
+                        if (!this.userId) {
+                            return;
+                        }
+                        
+                        window.addEventListener('message', ({ origin, data }) => {
+                            if (origin !== 'https://vidfast.pro' || !data) {
+                                return;
+                            }
+
+                            if (data.type === 'PLAYER_EVENT') {
+                                this.handlePlayerEvent(data.data);
+                            }
+                        });
+                    },
+                    
+                    handlePlayerEvent(eventData) {
+                        const { event, currentTime, duration, tmdbId } = eventData;
+                                                
+                        const shouldSave = event === 'pause' || 
+                                        event === 'ended' || 
+                                        event === 'seeked' || 
+                                        (event === 'timeupdate' && Date.now() - this.lastProgressUpdate > this.progressUpdateThrottle);
+                        
+                        if (shouldSave && duration > 0 && currentTime > 0) {
+                            this.saveWatchProgress(tmdbId, currentTime, duration);
+                            this.lastProgressUpdate = Date.now();
+                        }
+                    },
+                    
+                    async saveWatchProgress(tmdbId, watched, duration) {
+                        try {
+                            const response = await fetch('/watch-progress', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': this.csrfToken
+                                },
+                                body: JSON.stringify({
+                                    tmdb_id: tmdbId,
+                                    media_type: 'movie',
+                                    watched: watched,
+                                    duration: duration
+                                })
+                            });
+
+                        } catch (error) {
+                            console.error('Error saving watch progress:', error);
+                        }
+                    },
+                    
+                    async openModal() {
+                        this.isOpen = true;
+                        
+                        this.$nextTick(() => {
+                            this.initProgressTracking();
+                        });
+                        
+                        if (this.userId) {
+                            this.fetchWatchProgress();
+                        }
+                    },
+                    
+                    closeModal() {
+                        this.isOpen = false;
+                        this.resumeTimestamp = 0; // Reset for next time
+                    },
+                    
+                    getIframeUrl() {
+                        let url = `https://vidfast.pro/movie/${this.movieId}?theme=16A085`;
+                        if (this.resumeTimestamp > 0 && this.userId) {
+                            url += `&t=${this.resumeTimestamp}`;
+                        }
+                        return url;
+                    }
+                }">
                     <button
-                        @click="isOpen = true"
+                        @click="openModal"
                         class="btn gap-2 w-full md:w-auto bg-green-700 hover:bg-green-800 text-white md:px-6 md:py-2 rounded-box font-semibold"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
@@ -33,8 +154,7 @@
                         </svg>
                         Play Now
                     </button>
-                    
-                    <!-- Movie Modal -->
+                
                     <template x-if="isOpen">
                         <div
                             style="background-color: rgba(0, 0, 0, .5);"
@@ -44,14 +164,20 @@
                                 <div class="bg-gray-900 rounded">
                                     <div class="flex justify-end pr-4 pt-2">
                                         <button
-                                            @click="isOpen = false"
-                                            @keydown.escape.window="isOpen = false"
+                                            @click="closeModal()"
+                                            @keydown.escape.window="closeModal()"
                                             class="text-3xl leading-none hover:text-gray-300">&times;
                                         </button>
                                     </div>
                                     <div class="modal-body px-8 py-8">
                                         <div class="responsive-container overflow-hidden relative pt-96">
-                                            <iframe class="responsive-iframe absolute top-0 left-0 w-full h-full" src="https://vidfast.pro/movie/{{ $movie['id'] }}" style="border:0;" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+                                            <iframe 
+                                                class="responsive-iframe absolute top-0 left-0 w-full h-full" 
+                                                :src="getIframeUrl()" 
+                                                style="border:0;" 
+                                                allow="autoplay; encrypted-media" 
+                                                allowfullscreen>
+                                            </iframe>
                                         </div>
                                     </div>
                                 </div>
@@ -60,7 +186,6 @@
                     </template>
                 </div>
                 
-                <!-- Watch Trailer Button -->
                 <div x-data="{ isOpen: false }">
                     <button
                         @click="isOpen = true"
@@ -229,9 +354,7 @@
         </div>
     </div>
 
-    <!-- Tab content panels -->
     <div class="mx-6 md:max-w-3xl lg:max-w-7xl md:mx-auto py-5">
-        <!-- Similar Movies Tab -->
         <div x-show="activeTab === 'similar'" class="tab-panel">
             <div x-show="loading" class="text-center py-8">
                 <div class="text-white">Loading Recommendations <span class="loading loading-spinner loading-lg text-success"></span></div>
