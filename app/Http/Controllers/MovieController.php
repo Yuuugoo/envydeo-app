@@ -135,99 +135,66 @@ class MovieController extends Controller
         return response()->json($images);
     }
 
-    // This is a sample fucntion provided by claude to make show visually appealing backdrop on my index page carousel
+    // This is a sample fucntion provided by claude to show visually appealing backdrop on my index page carousel
     private function getVisuallyImpressiveMovies()
     {
-        // Visual-heavy genres: Sci-fi (878), Adventure (12), Fantasy (14), Action (28)
-        $visualGenres = '878,12,14,10749';
+        $token = config('services.tmdb.token');
         
-        // Fetch standard visual movies (original query)
-        $visualMoviesResponse = Http::withToken(config('services.tmdb.token'))
-            ->get('https://api.themoviedb.org/3/discover/movie', [
-                'sort_by' => 'popularity.desc',
-                'with_genres' => $visualGenres,
-                'page' => 1,
-                'include_adult' => false
-            ]);
+        // Fetch trending content
+        $trendingMovies = Http::withToken($token)
+            ->get('https://api.themoviedb.org/3/trending/movie/week')
+            ->json()['results'] ?? [];
         
-        // Get popular TV shows, sort by newest first
-        $popularTVResponse = Http::withToken(config('services.tmdb.token'))
-            ->get('https://api.themoviedb.org/3/discover/tv', [
-                'sort_by' => 'first_air_date.desc', // Sort by newest first
-                'page' => 1,
-                'include_adult' => false,
-                'first_air_date.gte' => date('Y-m-d', strtotime('-1 year')), // Shows from the last year
-            ]);
+        $trendingTV = Http::withToken($token)
+            ->get('https://api.themoviedb.org/3/trending/tv/week')
+            ->json()['results'] ?? [];
         
-        // Get trending TV shows for this week
-        $trendingTVResponse = Http::withToken(config('services.tmdb.token'))
-            ->get('https://api.themoviedb.org/3/trending/tv/week', [
-                'page' => 1,
-            ]);
-        
-        // Combine all results from the queries
-        $potentialMovies = $visualMoviesResponse->json()['results'];
-        $potentialTVShows = array_merge(
-            $popularTVResponse->json()['results'],
-            $trendingTVResponse->json()['results']
-        );
-        
-        // Mark media types BEFORE merging
-        foreach ($potentialMovies as &$movie) {
-            $movie['media_type'] = 'movie';
-        }
-        
-        foreach ($potentialTVShows as &$tvShow) {
-            $tvShow['media_type'] = 'tv';
-        }
-        
-        // Remove references to prevent unexpected behavior
-        unset($movie);
-        unset($tvShow);
-        
-        // Combine all results together
-        $allPotentialMedia = array_merge($potentialMovies, $potentialTVShows);
-        
-        // Shuffle the combined results
-        shuffle($allPotentialMedia);
+        // Combine and shuffle all content
+        $allMedia = collect($trendingMovies)
+            ->map(fn($m) => array_merge($m, ['media_type' => 'Movie']))
+            ->merge(
+                collect($trendingTV)->map(fn($tv) => array_merge($tv, ['media_type' => 'TV']))
+            )
+            ->filter(fn($m) => !empty($m['backdrop_path']))
+            ->shuffle()
+            ->take(15);
         
         $mediaWithDetails = [];
-        foreach ($allPotentialMedia as $media) {
-            // Ensure the item has a backdrop image for visual appeal
-            if (empty($media['backdrop_path'])) continue;
-            
-            if ($media['media_type'] === 'tv') {
+        
+        foreach ($allMedia as $media) {
+            if ($media['media_type'] === 'TV') {
                 // Fetch detailed TV show info
-                $details = Http::withToken(config('services.tmdb.token'))
+                $details = Http::withToken($token)
                     ->get("https://api.themoviedb.org/3/tv/{$media['id']}", [
-                        'append_to_response' => 'videos,external_ids,credits',
+                        'append_to_response' => 'videos,external_ids',
                     ])
                     ->json();
                 
                 if (empty($details['id'])) continue;
                 
-                // Extract genre names for the TV show
-                $genres = collect($details['genres'] ?? [])
-                    ->pluck('name')
-                    ->toArray();
-                
-                // Get the first available trailer if present
+                $genres = collect($details['genres'] ?? [])->pluck('name')->toArray();
                 $trailer = collect($details['videos']['results'] ?? [])
                     ->firstWhere('type', 'Trailer');
                 
-                // Merge the details into the TV show array
-                $mediaWithDetails[] = array_merge($media, [
-                    'number_of_seasons' => $details['number_of_seasons'] ?? null,
+                $mediaWithDetails[] = [
+                    'id' => $media['id'],
+                    'title' => $media['name'] ?? $details['name'],
+                    'overview' => $media['overview'],
+                    'backdrop_path' => $media['backdrop_path'],
+                    'poster_path' => $media['poster_path'],
                     'media_type' => 'TV',
+                    'vote_average' => $media['vote_average'],
+                    'release_date' => $media['first_air_date'] ?? $details['first_air_date'],
                     'genres' => $genres,
-                    'imdb_id' => $details['external_ids']['imdb_id'] ?? null,
+                    'number_of_seasons' => $details['number_of_seasons'] ?? null,
                     'trailer_key' => $trailer['key'] ?? null,
+                    'imdb_id' => $details['external_ids']['imdb_id'] ?? null,
                     'status' => $details['status'] ?? null,
-                    'first_air_date' => $details['first_air_date'] ?? null
-                ]);
+                    'first_air_date' => $details['first_air_date'] ?? null,
+                ];
             } else {
-                // Fetch detailed movie info, including videos and external IDs
-                $details = Http::withToken(config('services.tmdb.token'))
+                // Fetch detailed movie info
+                $details = Http::withToken($token)
                     ->get("https://api.themoviedb.org/3/movie/{$media['id']}", [
                         'append_to_response' => 'videos,external_ids',
                     ])
@@ -235,29 +202,29 @@ class MovieController extends Controller
                 
                 if (empty($details['id'])) continue;
                 
-                // Extract genre names for the movie
-                $genres = collect($details['genres'] ?? [])
-                    ->pluck('name')
-                    ->toArray();
-                
-                // Get the first available trailer if present
+                $genres = collect($details['genres'] ?? [])->pluck('name')->toArray();
                 $trailer = collect($details['videos']['results'] ?? [])
                     ->firstWhere('type', 'Trailer');
                 
-                // Merge the details into the movie array
-                $mediaWithDetails[] = array_merge($media, [
-                    'runtime' => $details['runtime'] ?? null,
+                $mediaWithDetails[] = [
+                    'id' => $media['id'],
+                    'title' => $media['title'] ?? $details['title'],
+                    'overview' => $media['overview'],
+                    'backdrop_path' => $media['backdrop_path'],
+                    'poster_path' => $media['poster_path'],
                     'media_type' => 'Movie',
+                    'vote_average' => $media['vote_average'],
+                    'release_date' => $media['release_date'] ?? $details['release_date'],
                     'genres' => $genres,
-                    'imdb_id' => $details['external_ids']['imdb_id'] ?? null,
+                    'runtime' => $details['runtime'] ?? null,
                     'trailer_key' => $trailer['key'] ?? null,
+                    'imdb_id' => $details['external_ids']['imdb_id'] ?? null,
                     'language' => $details['original_language'] ?? 'en',
-                ]);
+                ];
             }
-            if (count($mediaWithDetails) >= 15) break;
         }
-
-        return $mediaWithDetails;
+        
+        return collect($mediaWithDetails);
     }
 
 
@@ -315,7 +282,7 @@ class MovieController extends Controller
 
     public function loadTopRatedMovies()
     {
-        $topRatedMovies = Cache::remember('top_movies', 60 * 24, function () {
+        $topRatedMovies = Cache::remember('top_movies', 60 * 24 * 7, function () {
             return Http::withToken(config('services.tmdb.token'))
                 ->get('https://api.themoviedb.org/3/movie/top_rated')
                 ->json()['results'];

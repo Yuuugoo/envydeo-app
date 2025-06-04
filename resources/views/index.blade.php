@@ -89,16 +89,17 @@
                 x-transition:leave-start="opacity-100"
                 x-transition:leave-end="opacity-0"
             >
+
                 @if($movie['media_type'] == 'TV')
                     <img src="{{ 'https://image.tmdb.org/t/p/original/' . $movie['backdrop_path'] }}"
                         class="w-full h-full object-cover object-center"
-                        alt="{{ $movie['name'] }}" />
+                        alt="{{ $movie['title'] }}" />
 
                     <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent"></div>
 
                     <div class="absolute max-w-xl mt-64 md:mt-72 lg:mt-0 left-4 right-4 lg:bottom-8 lg:left-32 lg:right-0 text-white md:max-w-2xl space-y-4 z-10">
                         <span class="bg-gray-900 px-3 py-1 rounded-full text-xs font-semibold">{{ $movie['media_type']}}</span>
-                        <h2 class="text-3xl mt-3 font-bold">{{ $movie['name'] }}</h2>
+                        <h2 class="text-3xl mt-3 font-bold">{{ $movie['title'] }}</h2>
                         <p class="text-sm text-gray-300">
                             {{ $movie['number_of_seasons'] }} Season •
                             {{ implode(' • ', $movie['genres']) }}
