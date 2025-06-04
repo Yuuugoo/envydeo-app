@@ -363,13 +363,16 @@ class MovieController extends Controller
         $genreMovies = Cache::remember($cacheKey, 60 * 24, function () use ($id) {
             $allMovies = [];
 
-            for ($page = 1; $page <= 4; $page++) {
+            for ($page = 1; $page <= 3; $page++) {
                 $response = Http::withToken(config('services.tmdb.token'))
                     ->get('https://api.themoviedb.org/3/discover/movie', [
                         'with_genres' => $id,
                         'sort_by' => 'popularity.desc',
                         'language' => 'en-US',
+                        'with_original_language' => 'en',
+                        'vote_count.gte' => 50,
                         'page' => $page,
+                        'include_adult' => false,
                     ]);
 
                 if ($response->successful()) {

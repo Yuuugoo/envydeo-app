@@ -451,8 +451,14 @@
 
 <div class="container mx-auto px-4 max-w-7xl">
     <div class="popular-movies">
-        <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold">
-            Popular Movies
+        <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold flex space-x-0.5">
+            <span class="animate-pulse" style="animation-delay: 0s">P</span>
+            <span class="animate-pulse" style="animation-delay: 0.2s">O</span>
+            <span class="animate-pulse" style="animation-delay: 0.4s">P</span>
+            <span class="animate-pulse" style="animation-delay: 0.6s">U</span>
+            <span class="animate-pulse" style="animation-delay: 0.8s">L</span>
+            <span class="animate-pulse" style="animation-delay: 1.0s">A</span>
+            <span class="animate-pulse" style="animation-delay: 1.2s">R</span>
         </h2>
         <div
             x-data="{
@@ -642,8 +648,16 @@
 <!-- Top Rated Movies Section with Lazy Loading -->
 <div class="container mx-auto px-4 max-w-7xl mt-8">
     <div class="top-rated-movies">
-        <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold">
-            Top Rated Movies
+        <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold flex space-x-0.5">
+            <span class="animate-pulse" style="animation-delay: 0s">T</span>
+            <span class="animate-pulse" style="animation-delay: 0.2s">O</span>
+            <span class="animate-pulse" style="animation-delay: 0.4s">P</span>
+            <span class="animate-pulse" style="animation-delay: 0.6s"> </span>
+            <span class="animate-pulse" style="animation-delay: 0.8s">R</span>
+            <span class="animate-pulse" style="animation-delay: 1.0s">A</span>
+            <span class="animate-pulse" style="animation-delay: 1.2s">T</span>
+            <span class="animate-pulse" style="animation-delay: 1.4s">E</span>
+            <span class="animate-pulse" style="animation-delay: 1.6s">D</span>
         </h2>
         <div
             x-data="{
@@ -889,9 +903,15 @@
 <!-- Genre: Action Movies -->
 <div class="container mx-auto px-4 max-w-7xl mt-8">
     <div class="action-movies">
-        <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold">
-            Action
+        <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold flex space-x-0.5">
+            <span class="animate-pulse" style="animation-delay: 0s">A</span>
+            <span class="animate-pulse" style="animation-delay: 0.2s">c</span>
+            <span class="animate-pulse" style="animation-delay: 0.4s">t</span>
+            <span class="animate-pulse" style="animation-delay: 0.6s">i</span>
+            <span class="animate-pulse" style="animation-delay: 0.8s">o</span>
+            <span class="animate-pulse" style="animation-delay: 1s">n</span>
         </h2>
+
         <div
             x-data="{
                 genreId: 28,
@@ -1070,8 +1090,13 @@
 <!-- Genre: Comedy Movies -->
 <div class="container mx-auto px-4 max-w-7xl mt-8">
     <div class="comedy-movies">
-        <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold">
-            Comedy
+        <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold flex space-x-0.5">
+            <span class="animate-pulse" style="animation-delay: 0s">C</span>
+            <span class="animate-pulse" style="animation-delay: 0.2s">O</span>
+            <span class="animate-pulse" style="animation-delay: 0.4s">M</span>
+            <span class="animate-pulse" style="animation-delay: 0.6s">E</span>
+            <span class="animate-pulse" style="animation-delay: 0.8s">D</span>
+            <span class="animate-pulse" style="animation-delay: 1s">Y</span>
         </h2>
         <div
             x-data="{
@@ -1252,8 +1277,18 @@
 <!-- Genre: Documentary Movies -->
 <div class="container mx-auto px-4 max-w-7xl mt-8">
     <div class="documentary-movies">
-        <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold">
-            Documentary
+        <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold flex space-x-0.5">
+            <span class="animate-pulse" style="animation-delay: 0s">D</span>
+            <span class="animate-pulse" style="animation-delay: 0.2s">O</span>
+            <span class="animate-pulse" style="animation-delay: 0.4s">C</span>
+            <span class="animate-pulse" style="animation-delay: 0.6s">U</span>
+            <span class="animate-pulse" style="animation-delay: 0.8s">M</span>
+            <span class="animate-pulse" style="animation-delay: 1.0s">E</span>
+            <span class="animate-pulse" style="animation-delay: 1.2s">N</span>
+            <span class="animate-pulse" style="animation-delay: 1.4s">T</span>
+            <span class="animate-pulse" style="animation-delay: 1.6s">A</span>
+            <span class="animate-pulse" style="animation-delay: 1.8s">R</span>
+            <span class="animate-pulse" style="animation-delay: 2.0s">Y</span>
         </h2>
         <div
             x-data="{
@@ -1433,8 +1468,14 @@
 <!-- Genre: History Movies -->
 <div class="container mx-auto px-4 max-w-7xl mt-8">
     <div class="history-movies">
-        <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold">
-            History
+        <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold flex space-x-0.5">
+            <span class="animate-pulse" style="animation-delay: 0s">H</span>
+            <span class="animate-pulse" style="animation-delay: 0.2s">I</span>
+            <span class="animate-pulse" style="animation-delay: 0.4s">S</span>
+            <span class="animate-pulse" style="animation-delay: 0.6s">T</span>
+            <span class="animate-pulse" style="animation-delay: 0.8s">O</span>
+            <span class="animate-pulse" style="animation-delay: 1.0s">R</span>
+            <span class="animate-pulse" style="animation-delay: 1.2s">Y</span>
         </h2>
         <div
             x-data="{
@@ -1614,8 +1655,13 @@
 <!-- Genre: Horror Movies -->
 <div class="container mx-auto px-4 max-w-7xl mt-8">
     <div class="horror-movies">
-        <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold">
-            Horror
+        <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold flex space-x-0.5">
+            <span class="animate-pulse" style="animation-delay: 0s">H</span>
+            <span class="animate-pulse" style="animation-delay: 0.2s">O</span>
+            <span class="animate-pulse" style="animation-delay: 0.4s">R</span>
+            <span class="animate-pulse" style="animation-delay: 0.6s">R</span>
+            <span class="animate-pulse" style="animation-delay: 0.8s">O</span>
+            <span class="animate-pulse" style="animation-delay: 1.0s">R</span>
         </h2>
         <div
             x-data="{
@@ -1796,8 +1842,14 @@
 <!-- Genre: Romance Movies -->
 <div class="container mx-auto px-4 max-w-7xl mt-8">
     <div class="romance-movies">
-        <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold">
-            Romance
+        <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold flex space-x-0.5">
+            <span class="animate-pulse" style="animation-delay: 0s">R</span>
+            <span class="animate-pulse" style="animation-delay: 0.2s">O</span>
+            <span class="animate-pulse" style="animation-delay: 0.4s">M</span>
+            <span class="animate-pulse" style="animation-delay: 0.6s">A</span>
+            <span class="animate-pulse" style="animation-delay: 0.8s">N</span>
+            <span class="animate-pulse" style="animation-delay: 1.0s">C</span>
+            <span class="animate-pulse" style="animation-delay: 1.2s">E</span>
         </h2>
         <div
             x-data="{
@@ -1978,8 +2030,14 @@
 <!-- Genre: Mystery Movies -->
 <div class="container mx-auto px-4 max-w-7xl mt-8">
     <div class="mystery-movies">
-        <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold">
-            Mystery
+        <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold flex space-x-0.5">
+            <span class="animate-pulse" style="animation-delay: 0s">M</span>
+            <span class="animate-pulse" style="animation-delay: 0.2s">Y</span>
+            <span class="animate-pulse" style="animation-delay: 0.4s">S</span>
+            <span class="animate-pulse" style="animation-delay: 0.6s">T</span>
+            <span class="animate-pulse" style="animation-delay: 0.8s">E</span>
+            <span class="animate-pulse" style="animation-delay: 1.0s">R</span>
+            <span class="animate-pulse" style="animation-delay: 1.2s">Y</span>
         </h2>
         <div
             x-data="{
@@ -2160,8 +2218,13 @@
 <!-- Genre: Science Fiction Movies -->
 <div class="container mx-auto px-4 max-w-7xl mt-8">
     <div class="scifi-movies">
-        <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold">
-            Sci-fi
+        <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold flex space-x-0.5">
+            <span class="animate-pulse" style="animation-delay: 0s">S</span>
+            <span class="animate-pulse" style="animation-delay: 0.2s">C</span>
+            <span class="animate-pulse" style="animation-delay: 0.4s">I</span>
+            <span class="animate-pulse" style="animation-delay: 0.6s">-</span>
+            <span class="animate-pulse" style="animation-delay: 0.8s">F</span>
+            <span class="animate-pulse" style="animation-delay: 1.0s">I</span>
         </h2>
         <div
             x-data="{
