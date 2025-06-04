@@ -369,7 +369,7 @@
                             <template x-for="(chunk, index) in chunks" :key="index">
                                 <div class="w-full flex-shrink-0">
                                     <div class="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
-                                        <template x-for="(movie, movieIndex) in chunk" :key="movie.id">
+                                        <template x-for="(movie, movieIndex) in chunk" :key="`${index}-${movieIndex}`">
                                             <div class="mt-4 relative group">
                                                 <a :href="`/movies/${movie.id}`">
                                                     <img :src="`https://image.tmdb.org/t/p/w500/${movie.poster_path}`"
@@ -605,7 +605,7 @@
                     <template x-for="(chunk, index) in chunks" :key="index">
                         <div class="w-full flex-shrink-0">
                             <div class="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
-                                <template x-for="(movie, movieIndex) in chunk" :key="movie.id">
+                                <template x-for="(movie, movieIndex) in chunk" :key="`${index}-${movieIndex}`">
                                     <div class="mt-4 relative group">
                                         <a :href="`/movies/${movie.id}`">
                                             <img :src="`https://image.tmdb.org/t/p/w500/${movie.poster_path}`"
@@ -802,7 +802,7 @@
                     <template x-for="(chunk, index) in chunks" :key="index">
                         <div class="w-full flex-shrink-0">
                             <div class="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
-                                <template x-for="(movie, movieIndex) in chunk" :key="movie.id">
+                                <template x-for="(movie, movieIndex) in chunk" :key="`${index}-${movieIndex}`">
                                     <div class="mt-1 relative group">
                                         <a :href="`/movies/${movie.id}`">
                                             <img :src="`https://image.tmdb.org/t/p/w500/${movie.poster_path}`"
@@ -1058,7 +1058,7 @@
                     <template x-for="(chunk, index) in chunks" :key="index">
                         <div class="w-full flex-shrink-0">
                             <div class="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
-                                <template x-for="(movie, movieIndex) in chunk" :key="movie.id">
+                                <template x-for="(movie, movieIndex) in chunk" :key="`${index}-${movieIndex}`">
                                     <div class="mt-1 relative group">
                                         <a :href="`/movies/${movie.id}`">
                                             <img :src="`https://image.tmdb.org/t/p/w500/${movie.poster_path}`"
@@ -1248,7 +1248,7 @@
                     <template x-for="(chunk, index) in chunks" :key="index">
                         <div class="w-full flex-shrink-0">
                             <div class="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
-                                <template x-for="(movie, movieIndex) in chunk" :key="movie.id">
+                                <template x-for="(movie, movieIndex) in chunk" :key="`${index}-${movieIndex}`">
                                     <div class="mt-1 relative group">
                                         <a :href="`/movies/${movie.id}`">
                                             <img :src="`https://image.tmdb.org/t/p/w500/${movie.poster_path}`"
@@ -1434,7 +1434,7 @@
                     <template x-for="(chunk, index) in chunks" :key="index">
                         <div class="w-full flex-shrink-0">
                             <div class="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
-                                <template x-for="(movie, movieIndex) in chunk" :key="movie.id">
+                                <template x-for="(movie, movieIndex) in chunk" :key="`${index}-${movieIndex}`">
                                     <div class="mt-1 relative group">
                                         <a :href="`/movies/${movie.id}`">
                                             <img :src="`https://image.tmdb.org/t/p/w500/${movie.poster_path}`"
@@ -1626,7 +1626,7 @@
                     <template x-for="(chunk, index) in chunks" :key="index">
                         <div class="w-full flex-shrink-0">
                             <div class="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
-                                <template x-for="(movie, movieIndex) in chunk" :key="movie.id">
+                                <template x-for="(movie, movieIndex) in chunk" :key="`${index}-${movieIndex}`">
                                     <div class="mt-1 relative group">
                                         <a :href="`/movies/${movie.id}`">
                                             <img :src="`https://image.tmdb.org/t/p/w500/${movie.poster_path}`"
@@ -1813,7 +1813,7 @@
                     <template x-for="(chunk, index) in chunks" :key="index">
                         <div class="w-full flex-shrink-0">
                             <div class="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
-                                <template x-for="(movie, movieIndex) in chunk" :key="movie.id">
+                                <template x-for="(movie, movieIndex) in chunk" :key="`${index}-${movieIndex}`">
                                     <div class="mt-1 relative group">
                                         <a :href="`/movies/${movie.id}`">
                                             <img :src="`https://image.tmdb.org/t/p/w500/${movie.poster_path}`"
@@ -1999,7 +1999,7 @@
                     <template x-for="(chunk, index) in chunks" :key="index">
                         <div class="w-full flex-shrink-0">
                             <div class="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
-                                <template x-for="(movie, movieIndex) in chunk" :key="movie.id">
+                                <template x-for="(movie, movieIndex) in chunk" :key="`${index}-${movieIndex}`">
                                     <div class="mt-1 relative group">
                                         <a :href="`/movies/${movie.id}`">
                                             <img :src="`https://image.tmdb.org/t/p/w500/${movie.poster_path}`"
@@ -2187,7 +2187,7 @@
                     <template x-for="(chunk, index) in chunks" :key="index">
                         <div class="w-full flex-shrink-0">
                             <div class="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
-                                <template x-for="(movie, movieIndex) in chunk" :key="movie.id">
+                                <template x-for="(movie, movieIndex) in chunk" :key="`${index}-${movieIndex}`">
                                     <div class="mt-1 relative group">
                                         <a :href="`/movies/${movie.id}`">
                                             <img :src="`https://image.tmdb.org/t/p/w500/${movie.poster_path}`"
@@ -2375,7 +2375,7 @@
                     <template x-for="(chunk, index) in chunks" :key="index">
                         <div class="w-full flex-shrink-0">
                             <div class="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
-                                <template x-for="(movie, movieIndex) in chunk" :key="movie.id">
+                                <template x-for="(movie, movieIndex) in chunk" :key="`${index}-${movieIndex}`">
                                     <div class="mt-1 relative group">
                                         <a :href="`/movies/${movie.id}`">
                                             <img :src="`https://image.tmdb.org/t/p/w500/${movie.poster_path}`"
@@ -2562,7 +2562,7 @@
                     <template x-for="(chunk, index) in chunks" :key="index">
                         <div class="w-full flex-shrink-0">
                             <div class="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-4">
-                                <template x-for="(movie, movieIndex) in chunk" :key="movie.id">
+                                <template x-for="(movie, movieIndex) in chunk" :key="`${index}-${movieIndex}`">
                                     <div class="mt-1 relative group">
                                         <a :href="`/movies/${movie.id}`">
                                             <img :src="`https://image.tmdb.org/t/p/w500/${movie.poster_path}`"
