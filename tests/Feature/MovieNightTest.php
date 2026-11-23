@@ -147,8 +147,8 @@ class MovieNightTest extends TestCase
         $component->call('$refresh')
             ->assertSee('It’s a match!')
             ->assertSee('Alpha')
-            ->assertSee('Play now')
-            ->assertSee('vidfast.pro/movie/101', false)
+            ->assertSee('Where to watch')
+            ->assertDontSee('vidfast', false)
             ->assertSee('Share the moment');
     }
 
@@ -211,6 +211,18 @@ class MovieNightTest extends TestCase
 
         $room->update(['expires_at' => now()->subMinute()]);
         $this->get("/movie-night/{$room->code}")->assertNotFound();
+    }
+
+    public function test_movie_pages_point_to_legal_services_instead_of_an_embedded_player(): void
+    {
+        $this->get('/movies/101')
+            ->assertOk()
+            ->assertSee('Where to watch')
+            ->assertSee('Netflix')
+            ->assertSee('Availability data by JustWatch')
+            ->assertDontSee('vidfast', false);
+
+        $this->get('/watch-progress')->assertNotFound();
     }
 
     // ------------------------------------------------------------------ sharing

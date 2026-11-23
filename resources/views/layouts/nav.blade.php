@@ -20,6 +20,7 @@
     @keydown.escape.window="open = false"
     x-effect="document.documentElement.classList.toggle('overflow-hidden', open)"
     class="fixed inset-x-0 top-0 z-50"
+    data-app-header
 >
     {{--
         The bar's background/blur lives on its own layer, NOT on <header>. A backdrop-filter on an element
@@ -131,6 +132,13 @@
             </ul>
 
             <div class="border-t border-white/10 p-4">
+                <div x-data="installApp()" x-show="available" x-cloak class="mb-3">
+                    <button type="button" @click="open = false; install()"
+                            class="flex w-full items-center gap-3 rounded-xl bg-brand-600/15 px-3 py-3 text-left font-semibold text-brand-200 ring-1 ring-brand-500/30 transition hover:bg-brand-600/25">
+                        <x-icon name="phone" class="size-5" />
+                        <span class="flex-1">Install the Envydeo app</span>
+                    </button>
+                </div>
                 @auth
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf

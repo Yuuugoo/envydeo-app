@@ -107,12 +107,8 @@
                             </div>
                         @endunless
 
-                        <div class="mt-6 flex flex-wrap gap-3" x-data="{ playing: null }">
-                            {{-- Same embedded player as the rest of the site --}}
-                            <button type="button" @click="playing = 'https://vidfast.pro/movie/{{ $match['id'] }}?theme=16A085'" class="btn-brand">
-                                <x-icon name="play-solid" class="size-5" /> Play now
-                            </button>
-                            <x-video-modal show="playing" src="playing" close="playing = null" label="Movie player" />
+                        <div class="mt-6 flex flex-wrap gap-3">
+                            <a href="#where-to-watch" class="btn-brand"><x-icon name="tv" class="size-5" /> Where to watch</a>
                             <a href="{{ route('movie.show', $match['id']) }}" class="btn-glass"><x-icon name="info" class="size-5" /> Details</a>
                             @if ($isHost)
                                 <button type="button" wire:click="newRound" wire:loading.attr="disabled" class="btn-glass">

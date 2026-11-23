@@ -76,15 +76,9 @@
                         </p>
 
                         <div class="mt-6 grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:gap-3">
-                            @if ($isTv)
-                                <a href="{{ $detailsUrl }}" class="btn-brand col-span-2 sm:col-span-1">
-                                    <x-icon name="play-solid" class="size-5" /> Watch Now
-                                </a>
-                            @else
-                                <button type="button" @click="openVideo('https://vidfast.pro/movie/{{ $slide['id'] }}?theme=16A085')" class="btn-brand col-span-2 sm:col-span-1">
-                                    <x-icon name="play-solid" class="size-5" /> Play
-                                </button>
-                            @endif
+                            <a href="{{ $detailsUrl }}" class="btn-brand col-span-2 sm:col-span-1">
+                                <x-icon name="info" class="size-5" /> Details &amp; where to watch
+                            </a>
 
                             @if (!empty($slide['trailer_key']))
                                 <button type="button" @click="openVideo('https://www.youtube.com/embed/{{ $slide['trailer_key'] }}?autoplay=1')" class="btn-glass">
@@ -92,11 +86,9 @@
                                 </button>
                             @endif
 
-                            @if ($isTv)
-                                <a href="{{ $detailsUrl }}" class="btn-glass"><x-icon name="info" class="size-5" /> Details</a>
-                            @else
+                            @unless ($isTv)
                                 <livewire:add-watchlist :tmdb-id="$slide['id']" :key="'hero-' . $slide['id']" />
-                            @endif
+                            @endunless
                         </div>
                     </div>
                 </div>
@@ -129,12 +121,6 @@
 {{-- ===================================================================== ROWS --}}
 <div class="relative z-20 {{ $slides->isNotEmpty() ? '-mt-6 md:-mt-10' : 'page-top' }}">
     <div class="shell space-y-10 md:space-y-14">
-        @auth
-            @if ($continueWatchingMovies->isNotEmpty())
-                <x-poster-row title="Continue Watching" :items="$continueWatchingMovies" :genres="$genres" />
-            @endif
-        @endauth
-
         <x-poster-row title="Popular Movies" url="/api/movies/popular" :genres="$genres" :href="route('movie.list')" />
         <x-poster-row title="Trending TV Shows" url="/api/tv/popular" data-key="shows" type="tv" :genres="$tvGenres" :href="route('show.list')" />
         <x-poster-row title="Top Rated" url="/api/movies/top-rated" :genres="$genres" />

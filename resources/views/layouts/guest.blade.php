@@ -20,6 +20,8 @@
 
     @include('layouts.footer')
 
+    <x-install-app />
+
     @livewireScripts
 </body>
 </html>

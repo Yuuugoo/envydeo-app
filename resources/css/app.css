@@ -224,6 +224,17 @@
     }
 }
 
+/* Installed app (PWA): iOS draws the status bar over the page ("black-translucent"), so push the
+   fixed nav and top-padded pages below the notch / status bar. No effect in a normal browser tab. */
+@media (display-mode: standalone) {
+    [data-app-header] {
+        padding-top: env(safe-area-inset-top);
+    }
+    .page-top {
+        padding-top: calc(6rem + env(safe-area-inset-top));
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     *,
     *::before,

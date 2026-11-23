@@ -9,7 +9,6 @@ use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WatchlistController;
 use App\Http\Controllers\OAuthProviderController;
-use App\Http\Controllers\WatchProgressController;
 
 Route::get('/', [MovieController::class, 'index'])->name('movie.index');
 Route::get('/movies', [MovieController::class, 'list'])->name('movie.list');
@@ -56,11 +55,6 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::middleware('auth')->group(function () {
-    Route::post('/watch-progress', [WatchProgressController::class, 'store']);
-    Route::get('/watch-progress', [WatchProgressController::class, 'index']);
-    Route::delete('/watch-progress/{tmdbId}', [WatchProgressController::class, 'destroy']);
-});
 
 
 Route::middleware(['guest'])

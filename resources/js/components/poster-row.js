@@ -217,8 +217,4 @@ export default (cfg = {}) => ({
             ? `${IMG}w780${item.backdrop_path}`
             : `${IMG}w342${item.poster_path}`;
     },
-    progress(item) {
-        const p = item.watch_progress;
-        return p && p.duration ? Math.min(100, Math.round((p.watched / p.duration) * 100)) : null;
-    },
 });

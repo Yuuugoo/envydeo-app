@@ -62,85 +62,10 @@
                     </div>
                 @endif
 
-                <div class="mt-6 grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:gap-3"
-                     x-data="{
-                        isOpen: false,
-                        trailerOpen: false,
-                        movieId: {{ $movie['id'] }},
-                        userId: '{{ auth()->id() }}',
-                        csrfToken: '{{ csrf_token() }}',
-                        lastProgressUpdate: 0,
-                        progressUpdateThrottle: 5000,
-                        resumeTimestamp: 0,
-                        listening: false,
-
-                        async fetchWatchProgress() {
-                            if (!this.userId) return;
-                            try {
-                                const response = await fetch('/watch-progress', {
-                                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': this.csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
-                                });
-                                if (!response.ok) return;
-                                const result = await response.json();
-                                const progress = (result.data || []).find(p => p.tmdb_id == this.movieId && p.media_type === 'movie');
-                                if (progress && progress.watched > 30 && progress.watched < progress.duration * 0.9) {
-                                    this.resumeTimestamp = Math.floor(progress.watched);
-                                }
-                            } catch (error) {
-                                console.error('Error fetching watch progress:', error);
-                            }
-                        },
-
-                        initProgressTracking() {
-                            if (!this.userId || this.listening) return;
-                            this.listening = true;
-                            window.addEventListener('message', ({ origin, data }) => {
-                                if (origin !== 'https://vidfast.pro' || !data) return;
-                                if (data.type === 'PLAYER_EVENT') this.handlePlayerEvent(data.data);
-                            });
-                        },
-
-                        handlePlayerEvent({ event, currentTime, duration, tmdbId }) {
-                            const shouldSave = ['pause', 'ended', 'seeked'].includes(event)
-                                || (event === 'timeupdate' && Date.now() - this.lastProgressUpdate > this.progressUpdateThrottle);
-                            if (shouldSave && duration > 0 && currentTime > 0) {
-                                this.saveWatchProgress(tmdbId, currentTime, duration);
-                                this.lastProgressUpdate = Date.now();
-                            }
-                        },
-
-                        async saveWatchProgress(tmdbId, watched, duration) {
-                            try {
-                                await fetch('/watch-progress', {
-                                    method: 'POST',
-                                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': this.csrfToken },
-                                    body: JSON.stringify({ tmdb_id: tmdbId, media_type: 'movie', watched, duration })
-                                });
-                            } catch (error) {
-                                console.error('Error saving watch progress:', error);
-                            }
-                        },
-
-                        async openModal() {
-                            if (this.userId) await this.fetchWatchProgress();
-                            this.initProgressTracking();
-                            this.isOpen = true;
-                        },
-
-                        closeModal() {
-                            this.isOpen = false;
-                            this.resumeTimestamp = 0;
-                        },
-
-                        getIframeUrl() {
-                            let url = `https://vidfast.pro/movie/${this.movieId}?theme=16A085`;
-                            if (this.resumeTimestamp > 0 && this.userId) url += `&t=${this.resumeTimestamp}`;
-                            return url;
-                        }
-                     }">
-                    <button type="button" @click="openModal()" class="btn-brand col-span-2 sm:col-span-1">
-                        <x-icon name="play-solid" class="size-5" /> Play
-                    </button>
+                <div class="mt-6 grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:gap-3" x-data="{ trailerOpen: false }">
+                    <a href="#where-to-watch" class="btn-brand col-span-2 sm:col-span-1">
+                        <x-icon name="tv" class="size-5" /> Where to watch
+                    </a>
 
                     @if ($trailer)
                         <button type="button" @click="trailerOpen = true" class="btn-glass">
@@ -150,7 +75,6 @@
 
                     <livewire:add-watchlist :tmdb-id="$movie['id']" />
 
-                    <x-video-modal show="isOpen" src="getIframeUrl()" close="closeModal()" label="Movie player" />
                     @if ($trailer)
                         <x-video-modal show="trailerOpen" src="'https://www.youtube.com/embed/{{ $trailer['key'] }}?autoplay=1'" close="trailerOpen = false" label="Trailer" />
                     @endif
@@ -167,6 +91,8 @@
             <h2 class="section-title">Storyline</h2>
             <p class="mt-4 max-w-3xl text-base leading-relaxed text-gray-300">{{ $movie['overview'] ?: 'No overview available.' }}</p>
         </section>
+
+        <x-where-to-watch :data="$whereToWatch" :region="$regionName" />
 
         @if ($cast->isNotEmpty())
             <section>

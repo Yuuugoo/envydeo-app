@@ -2,7 +2,7 @@
     Endless, swipeable row of posters or backdrops (logic: resources/js/components/poster-row.js).
 
     <x-poster-row title="Popular" url="/api/movies/popular" :genres="$genres" :href="route('movie.list')" />
-    <x-poster-row title="Continue Watching" :items="$items" />
+    <x-poster-row title="More Like This" :items="$similar" type="tv" variant="backdrop" />
     <x-poster-row title="More Like This" url="/movies/1/similar" data-key="similarMovie" variant="backdrop" />
 --}}
 @props([
@@ -90,7 +90,7 @@
                                 @if ($isBackdrop)
                                     <span class="absolute inset-0 grid place-items-center bg-black/0 transition group-hover/card:bg-black/30">
                                         <span class="grid size-12 scale-75 place-items-center rounded-full bg-brand-600/90 opacity-0 shadow-xl transition group-hover/card:scale-100 group-hover/card:opacity-100">
-                                            <x-icon name="play-solid" class="size-5 translate-x-px text-white" />
+                                            <x-icon name="chevron-right" class="size-5 translate-x-px text-white" />
                                         </span>
                                     </span>
                                 @else
@@ -108,12 +108,6 @@
                                         </div>
                                     </div>
                                 @endif
-
-                                <template x-if="progress(entry.item) !== null">
-                                    <div class="absolute inset-x-0 bottom-0 h-1 bg-white/20">
-                                        <div class="h-full rounded-r-full bg-brand-400" :style="`width: ${progress(entry.item)}%`"></div>
-                                    </div>
-                                </template>
                             </div>
 
                             @if ($isBackdrop)
@@ -129,9 +123,6 @@
                             @else
                                 <div class="touch-only mt-2 px-0.5">
                                     <p class="line-clamp-1 text-[13px] font-semibold text-gray-200" x-text="title(entry.item)"></p>
-                                    <template x-if="progress(entry.item) !== null">
-                                        <p class="text-[11px] text-gray-500" x-text="`${progress(entry.item)}% watched`"></p>
-                                    </template>
                                 </div>
                             @endif
                         </a>

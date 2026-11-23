@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\MovieNightDealer;
 use App\Services\Tmdb;
 
 class ShowsController extends Controller
@@ -22,7 +23,7 @@ class ShowsController extends Controller
         ]);
     }
 
-    public function show($id)
+    public function show($id, MovieNightDealer $dealer)
     {
         $selectedTV = $this->tmdb->get("/tv/{$id}", ['append_to_response' => 'credits,videos,images'], Tmdb::HOURS_6);
 
@@ -64,6 +65,8 @@ class ShowsController extends Controller
             'similarTV' => $responses['similar']['results'] ?? [],
             'recommendedTV' => $responses['recommendations']['results'] ?? [],
             'episodes' => $seasonsWithEpisodes,
+            'whereToWatch' => $dealer->whereToWatch((int) $id, $region = MovieNightDealer::regionFromLocale(request()->getPreferredLanguage()), 'tv'),
+            'regionName' => MovieNightDealer::REGIONS[$region],
         ]);
     }
 }

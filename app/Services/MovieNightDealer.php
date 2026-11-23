@@ -116,9 +116,10 @@ class MovieNightDealer
      *
      * @return array{link: ?string, stream: list<array>, rent: list<array>, buy: list<array>}
      */
-    public function whereToWatch(int $tmdbId, string $region): array
+    public function whereToWatch(int $tmdbId, string $region, string $type = 'movie'): array
     {
-        $data = $this->tmdb->get("/movie/{$tmdbId}/watch/providers", [], Tmdb::HOURS_6)['results'][$region] ?? [];
+        $type = $type === 'tv' ? 'tv' : 'movie';
+        $data = $this->tmdb->get("/{$type}/{$tmdbId}/watch/providers", [], Tmdb::HOURS_6)['results'][$region] ?? [];
 
         $map = fn ($list) => collect($list ?? [])
             ->map(fn ($p) => ['name' => $p['provider_name'], 'logo' => $p['logo_path'] ?? null])

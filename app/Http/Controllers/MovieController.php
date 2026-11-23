@@ -2,10 +2,9 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\WatchProgress;
+use App\Services\MovieNightDealer;
 use App\Services\Tmdb;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 
 class MovieController extends Controller
@@ -20,7 +19,6 @@ class MovieController extends Controller
             'genres' => $this->tmdb->movieGenres(),
             'tvGenres' => $this->tmdb->tvGenres(),
             'moviesWithDetails' => $moviesWithDetails,
-            'continueWatchingMovies' => Auth::check() ? $this->getContinueWatchingMovies() : collect(),
         ]);
     }
 
@@ -38,11 +36,13 @@ class MovieController extends Controller
         ]);
     }
 
-    public function show($id)
+    public function show($id, MovieNightDealer $dealer)
     {
         $selectedMovie = $this->tmdb->get("/movie/{$id}", ['append_to_response' => 'credits,videos'], Tmdb::HOURS_6);
 
         abort_if(empty($selectedMovie['id']), 404);
+
+        $region = MovieNightDealer::regionFromLocale(request()->getPreferredLanguage());
 
         return view('movies.details', [
             'movie' => $selectedMovie,
@@ -50,6 +50,8 @@ class MovieController extends Controller
                 'media_type' => 'Movie',
                 'genres' => collect($selectedMovie['genres'] ?? [])->pluck('name')->toArray(),
             ],
+            'whereToWatch' => $dealer->whereToWatch((int) $id, $region),
+            'regionName' => MovieNightDealer::REGIONS[$region],
         ]);
     }
 
@@ -139,43 +141,6 @@ class MovieController extends Controller
                 'runtime' => $detail['runtime'] ?? null,
                 'language' => $detail['original_language'] ?? 'en',
             ];
-        })->filter()->values();
-    }
-
-    private function getContinueWatchingMovies(): Collection
-    {
-        $watchProgressItems = WatchProgress::where('user_id', Auth::id())
-            ->where('media_type', 'movie')
-            ->where('watched', '>', 0)
-            ->whereRaw('(watched / duration) < 0.95')
-            ->orderBy('updated_at', 'desc')
-            ->limit(20)
-            ->get();
-
-        if ($watchProgressItems->isEmpty()) {
-            return collect();
-        }
-
-        $details = $this->tmdb->many(
-            $watchProgressItems->mapWithKeys(fn ($p) => [$p->tmdb_id => ["/movie/{$p->tmdb_id}", ['language' => 'en-US']]])->all(),
-            Tmdb::DAY
-        );
-
-        return $watchProgressItems->map(function ($progress) use ($details) {
-            $movie = $details[$progress->tmdb_id] ?? [];
-
-            if (empty($movie['id'])) {
-                return null;
-            }
-
-            $movie['watch_progress'] = [
-                'watched' => $progress->watched,
-                'duration' => $progress->duration,
-                'percentage' => $progress->watched_percentage,
-                'updated_at' => $progress->updated_at,
-            ];
-
-            return $movie;
         })->filter()->values();
     }
 

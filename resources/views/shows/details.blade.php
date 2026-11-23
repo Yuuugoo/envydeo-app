@@ -27,13 +27,8 @@
         tab: 'episodes',
         season: {{ $seasonNumbers[0] ?? 1 }},
         episodes: @js($episodes),
-        playing: null,
         trailerOpen: false,
         lightbox: null,
-        tvId: {{ $tvShow['id'] }},
-        play(seasonNumber, episodeNumber) {
-            this.playing = `https://vidfast.pro/tv/${this.tvId}/${seasonNumber}/${episodeNumber}?nextButton=true&autoNext=true&theme=16A085`;
-        },
         airDate(date) {
             return date ? new Date(date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'TBA';
         }
@@ -81,11 +76,9 @@
                 @endif
 
                 <div class="mt-6 grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:gap-3">
-                    @if (!empty($seasonNumbers))
-                        <button type="button" @click="play({{ $seasonNumbers[0] }}, 1)" class="btn-brand col-span-2 sm:col-span-1">
-                            <x-icon name="play-solid" class="size-5" /> Play S{{ $seasonNumbers[0] }} E1
-                        </button>
-                    @endif
+                    <a href="#where-to-watch" class="btn-brand col-span-2 sm:col-span-1">
+                        <x-icon name="tv" class="size-5" /> Where to watch
+                    </a>
                     @if ($trailer)
                         <button type="button" @click="trailerOpen = true" class="btn-glass">
                             <x-icon name="trailer" class="size-5" /> Trailer
@@ -100,7 +93,6 @@
     </div>
 </section>
 
-<x-video-modal show="playing" src="playing" close="playing = null" label="Episode player" />
 @if ($trailer)
     <x-video-modal show="trailerOpen" src="'https://www.youtube.com/embed/{{ $trailer['key'] }}?autoplay=1'" close="trailerOpen = false" label="Trailer" />
 @endif
@@ -112,6 +104,8 @@
             <h2 class="section-title">Storyline</h2>
             <p class="mt-4 max-w-3xl text-base leading-relaxed text-gray-300">{{ $tvShow['overview'] ?: 'No overview available.' }}</p>
         </section>
+
+        <x-where-to-watch :data="$whereToWatch" :region="$regionName" />
 
         @if ($cast->isNotEmpty())
             <section>
@@ -177,24 +171,17 @@
             <div class="grid gap-4 lg:grid-cols-2">
                 <template x-for="ep in episodes[season] || []" :key="ep.id">
                     <article class="group flex flex-col gap-4 rounded-2xl bg-ink-900/70 p-3 ring-1 ring-white/5 transition hover:bg-ink-900 hover:ring-white/15 sm:flex-row sm:p-4">
-                        <button type="button" @click="play(season, ep.episode_number)"
-                                class="relative aspect-video w-full shrink-0 overflow-hidden rounded-xl bg-ink-800 sm:w-52 xl:w-60"
-                                :aria-label="`Play episode ${ep.episode_number}: ${ep.name}`">
+                        <div class="relative aspect-video w-full shrink-0 overflow-hidden rounded-xl bg-ink-800 sm:w-52 xl:w-60">
                             <template x-if="ep.still_path">
-                                <img :src="`https://image.tmdb.org/t/p/w300${ep.still_path}`" alt="" loading="lazy" class="size-full object-cover transition duration-500 group-hover:scale-105">
+                                <img :src="`https://image.tmdb.org/t/p/w300${ep.still_path}`" :alt="`Still from episode ${ep.episode_number}`" loading="lazy" class="size-full object-cover transition duration-500 group-hover:scale-105">
                             </template>
                             <template x-if="!ep.still_path">
                                 <span class="grid size-full place-items-center text-gray-600"><x-icon name="tv" class="size-8" /></span>
                             </template>
-                            <span class="absolute inset-0 grid place-items-center bg-black/25 transition sm:bg-black/0 sm:group-hover:bg-black/35">
-                                <span class="grid size-12 place-items-center rounded-full bg-brand-600/90 text-white shadow-xl transition sm:scale-90 sm:opacity-0 sm:group-hover:scale-100 sm:group-hover:opacity-100">
-                                    <x-icon name="play-solid" class="size-5 translate-x-px" />
-                                </span>
-                            </span>
                             <template x-if="ep.runtime">
                                 <span class="absolute bottom-2 right-2 rounded-md bg-black/75 px-1.5 py-0.5 text-[11px] font-bold text-white" x-text="`${ep.runtime}m`"></span>
                             </template>
-                        </button>
+                        </div>
 
                         <div class="min-w-0 flex-1 sm:py-1">
                             <p class="text-xs font-bold uppercase tracking-wider text-brand-400" x-text="`Episode ${ep.episode_number}`"></p>

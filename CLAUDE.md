@@ -1,9 +1,14 @@
 # Envydeo — Project Structure & Guide
 
-Envydeo is a movie / TV-show browsing and streaming site built on the **TALL stack**
-(Tailwind CSS 4 + DaisyUI 5, Alpine.js, Laravel 12, Livewire 3). All catalogue data comes
-from the **TMDB API**; the local database only stores users, OAuth links, watchlists and
-watch progress. Playback is an embedded third-party player (`vidfast.pro`), and trailers are YouTube embeds.
+Envydeo is a movie / TV-show discovery site built on the **TALL stack**
+(Tailwind CSS 4 + DaisyUI 5, Alpine.js, Laravel 12, Livewire 3), centred on **Movie Night Matcher**.
+All catalogue data comes from the **TMDB API**; the local database stores users, OAuth links,
+watchlists and Movie Night rooms. Envydeo does **not** stream video: titles link to legal
+services via "Where to watch" (TMDB watch providers, data by JustWatch), and trailers are YouTube embeds.
+
+> Branches: `wo-vidfast` (this direction) removed the old third-party `vidfast` player and the watch-progress
+> feature that depended on it. `w-vidfast` is a snapshot of the site with the player. Don't reintroduce
+> embedded streaming players — `tests/Feature/MovieNightTest.php` asserts pages contain no `vidfast`.
 
 ## Tech stack
 
@@ -47,17 +52,16 @@ app/
     ShowsController.php              /shows list + details (seasons/episodes fetched in parallel)
     SearchController.php             /search results page (movie + tv search in parallel, sort/filter)
     WatchlistController.php          /watchlist (auth) — movie details for saved tmdb_ids
-    WatchProgressController.php      JSON CRUD for playback progress (auth)
     OAuthProviderController.php      Socialite redirect + callback, avatar import via medialibrary
     ProfileController.php, Auth/*    Laravel Breeze (login, register, reset, verify, profile)
   Livewire/
     SearchDropdown.php               navbar live search (TMDB /search/multi, debounced 400ms)
     AddWatchlist.php                 toggle a tmdb_id in the user's watchlist
     AvatarDropdown.php               navbar user menu
-  Models/  User (UUID PK, HasMedia 'avatar'), OAuthProvider, Watchlist, WatchProgress
+  Models/  User (UUID PK, HasMedia 'avatar'), OAuthProvider, Watchlist, MatchRoom/MatchParticipant/MatchVote/MatchResult, MovieNightEvent
   Services/Tmdb.php                  TMDB client + cache (see above)
   View/Components/  AppLayout, GuestLayout
-database/migrations/                 users (uuid), cache, jobs, media, o_auth_providers, watchlist, watch_progress
+database/migrations/                 users (uuid), cache, jobs, media, o_auth_providers, watchlist, movie night tables (watch_progress dropped)
 resources/
   css/app.css                        Tailwind 4 + DaisyUI plugin + @source globs
   js/app.js, bootstrap.js            axios setup (Alpine itself comes from Livewire)
@@ -66,7 +70,7 @@ resources/
     layouts/app|guest.blade.php      Breeze component layouts (<x-app-layout>/<x-guest-layout>)
     layouts/nav.blade.php            top nav + DaisyUI mobile drawer; footer.blade.php
     index.blade.php                  HOME: hero carousel, continue watching, popular, top rated, genre rows
-    movies/index|details.blade.php   now-playing grid w/ pagination; movie page (player, trailer, tabs)
+    movies/index|details.blade.php   now-playing grid w/ pagination; movie page (where to watch, trailer, tabs)
     shows/index|details.blade.php    trending TV grid; show page (episodes by season, similar, images)
     results.blade.php                search results with media-type / sort filters
     watchlist.blade.php              user's watchlist grid
@@ -91,14 +95,13 @@ public/img/logo/                     Envydeo logos; public/build = Vite output (
 | GET | `/shows/{id}` | ShowsController@show | `show.show` |
 | GET | `/search?query=&media_type=&sort_by=&page=` | SearchController@results | `search.results` |
 | GET | `/watchlist` | WatchlistController@index | redirects guests to login |
-| GET/POST/DELETE | `/watch-progress[/{tmdbId}]` | WatchProgressController | auth, JSON |
 | GET | `/login/{provider}`, `/login/{provider}/envydeo/callback` | OAuthProviderController | guest only |
 | — | `/login`, `/register`, `/profile`, password/verify routes | Breeze | after auth → `movie.index` |
 
 ## Home page (index.blade.php)
 
 - **Hero:** rendered on the server from `$moviesWithDetails` (15 trending movies and shows). It uses Alpine `heroCarousel` (`resources/js/components/hero-carousel.js`): it **autoplays every 5s**, loops endlessly, and supports arrows, dots, keys and swipe. It pauses only while a video is open or the tab is hidden. Keep the autoplay; the owner wants it.
-- **Rows:** each row is one `<x-poster-row>`: Continue Watching (logged-in users, items preloaded), Popular, Trending TV, Top Rated, a "Discover by genre" banner with jump chips, then genre rows from the `$genreRows` array in the view.
+- **Rows:** each row is one `<x-poster-row>`: Popular, Trending TV, Top Rated, the Movie Night promo, a "Discover by genre" banner with jump chips, then genre rows from the `$genreRows` array in the view.
 
 ## Movie Night Matcher (`/movie-night`), the signature feature
 
