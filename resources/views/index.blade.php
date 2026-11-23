@@ -138,6 +138,23 @@
         <x-poster-row title="Popular Movies" url="/api/movies/popular" :genres="$genres" :href="route('movie.list')" />
         <x-poster-row title="Trending TV Shows" url="/api/tv/popular" data-key="shows" type="tv" :genres="$tvGenres" :href="route('show.list')" />
         <x-poster-row title="Top Rated" url="/api/movies/top-rated" :genres="$genres" />
+
+        {{-- Movie Night promo --}}
+        <section class="group relative isolate flex flex-col gap-6 overflow-hidden rounded-3xl bg-gradient-to-br from-brand-700/40 via-ink-900 to-fuchsia-900/30 p-6 ring-1 ring-white/10 sm:p-10 md:flex-row md:items-center md:justify-between">
+            <div aria-hidden="true" class="absolute -right-16 -top-16 -z-10 size-64 rounded-full bg-brand-500/20 blur-3xl"></div>
+            <div class="max-w-xl">
+                <p class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.18em] text-brand-300"><x-icon name="sparkles" class="size-4" /> New · Movie Night</p>
+                <h2 class="mt-3 text-2xl font-extrabold tracking-tight text-white md:text-4xl">Can’t decide what to watch?</h2>
+                <p class="mt-2 text-sm text-gray-300 md:text-base">Swipe solo and your first ♥ is tonight’s pick, or swipe with friends and the first one you all like wins.</p>
+            </div>
+            <div class="flex shrink-0 flex-wrap gap-3">
+                <form method="POST" action="{{ route('movie-night.quick') }}">
+                    @csrf
+                    <button type="submit" class="btn-brand"><x-icon name="sparkles" class="size-5" /> Decide for me</button>
+                </form>
+                <a href="{{ route('movie-night.index') }}" class="btn-glass"><x-icon name="users" class="size-5" /> With friends</a>
+            </div>
+        </section>
     </div>
 
     {{-- Discover by genre --}}

@@ -3,6 +3,7 @@
         ['label' => 'Home', 'icon' => 'home', 'href' => route('movie.index'), 'active' => request()->routeIs('movie.index')],
         ['label' => 'Movies', 'icon' => 'film', 'href' => route('movie.list'), 'active' => request()->routeIs('movie.list', 'movie.show')],
         ['label' => 'TV Shows', 'icon' => 'tv', 'href' => route('show.list'), 'active' => request()->routeIs('show.*')],
+        ['label' => 'Movie Night', 'icon' => 'sparkles', 'href' => route('movie-night.index'), 'active' => request()->routeIs('movie-night.*')],
     ];
     if (auth()->check()) {
         $navLinks[] = ['label' => 'Watchlist', 'icon' => 'bookmark', 'href' => route('watchlist.index'), 'active' => request()->routeIs('watchlist.*')];
@@ -18,9 +19,17 @@
     @scroll.window.passive="scrolled = window.scrollY > 10"
     @keydown.escape.window="open = false"
     x-effect="document.documentElement.classList.toggle('overflow-hidden', open)"
-    class="fixed inset-x-0 top-0 z-50 transition-[background-color,box-shadow] duration-300"
-    :class="scrolled ? 'bg-ink-950/85 shadow-[0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl' : 'bg-gradient-to-b from-ink-950/90 via-ink-950/40 to-transparent'"
+    class="fixed inset-x-0 top-0 z-50"
 >
+    {{--
+        The bar's background/blur lives on its own layer, NOT on <header>. A backdrop-filter on an element
+        makes it the containing block for position:fixed descendants, so the mobile drawer and search panel
+        would shrink to the 64px bar as soon as the page is scrolled.
+    --}}
+    <div aria-hidden="true"
+         class="pointer-events-none absolute inset-0 -z-10 transition-[background-color,box-shadow] duration-300"
+         :class="scrolled ? 'bg-ink-950/85 shadow-[0_1px_0_rgba(255,255,255,0.06)] backdrop-blur-xl' : 'bg-gradient-to-b from-ink-950/90 via-ink-950/40 to-transparent'"></div>
+
     <nav class="shell flex h-16 items-center gap-3 md:h-[4.5rem]" aria-label="Main">
         <a href="{{ route('movie.index') }}" class="shrink-0 rounded-lg transition hover:opacity-90" aria-label="Envydeo home">
             <x-logo />
@@ -106,6 +115,12 @@
                     </li>
                 @endforeach
                 @auth
+                    <li>
+                        <a href="{{ route('movie-night.us') }}" class="flex items-center gap-3 rounded-xl px-3 py-3 text-base font-semibold transition {{ request()->routeIs('movie-night.us') ? 'bg-brand-600/15 text-brand-300' : 'text-gray-200 hover:bg-white/5' }}">
+                            <x-icon name="heart" class="size-5" />
+                            “Us” rooms
+                        </a>
+                    </li>
                     <li>
                         <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 rounded-xl px-3 py-3 text-base font-semibold transition {{ request()->routeIs('profile.*') ? 'bg-brand-600/15 text-brand-300' : 'text-gray-200 hover:bg-white/5' }}">
                             <x-icon name="user" class="size-5" />

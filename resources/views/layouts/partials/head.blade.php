@@ -7,6 +7,8 @@
 <meta name="theme-color" content="#0a0e15">
 <meta name="description" content="Envydeo — discover and stream trending movies and TV shows.">
 <title>{{ $pageTitle ? $pageTitle . ' · Envydeo' : 'Envydeo — Movies & TV Shows' }}</title>
+<meta property="og:site_name" content="Envydeo">
+@stack('meta')
 
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">

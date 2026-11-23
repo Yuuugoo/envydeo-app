@@ -11,7 +11,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        //
+        // Honour X-Forwarded-* (https scheme, host) only from a proxy on this machine,
+        // e.g. a local tunnel such as cloudflared. Remote clients can't spoof it.
+        $middleware->trustProxies(at: ['127.0.0.1', '::1']);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

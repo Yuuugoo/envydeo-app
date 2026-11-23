@@ -45,6 +45,7 @@ class RegisteredUserController extends Controller
 
         Auth::login($user);
 
-        return redirect(route('movie.index', absolute: false));
+        // Back to where they came from (e.g. an "Us" room invite), else home.
+        return redirect()->intended(route('movie.index', absolute: false));
     }
 }

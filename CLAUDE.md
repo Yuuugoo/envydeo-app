@@ -100,6 +100,43 @@ public/img/logo/                     Envydeo logos; public/build = Vite output (
 - **Hero:** rendered on the server from `$moviesWithDetails` (15 trending movies and shows). It uses Alpine `heroCarousel` (`resources/js/components/hero-carousel.js`): it **autoplays every 5s**, loops endlessly, and supports arrows, dots, keys and swipe. It pauses only while a video is open or the tab is hidden. Keep the autoplay; the owner wants it.
 - **Rows:** each row is one `<x-poster-row>`: Continue Watching (logged-in users, items preloaded), Popular, Trending TV, Top Rated, a "Discover by genre" banner with jump chips, then genre rows from the `$genreRows` array in the view.
 
+## Movie Night Matcher (`/movie-night`), the signature feature
+
+Friends swipe the same deck of movies, each on their own device. The first movie **everyone** likes is the match.
+
+- **Code:**
+  - `MovieNightController`: landing page, join-by-code, room page.
+  - Livewire `MovieNight\CreateRoom`: the setup form.
+  - Livewire `MovieNight\Room`: lobby, voting, closest picks and the match screen. It polls every 2s; no websockets.
+  - `resources/js/components/swipe-deck.js`: Alpine drag/tap/keyboard deck. Votes go to `Room::vote()`, which is `#[Renderless]`.
+- **Data:**
+  - `match_rooms` holds the filters and the dealt deck as JSON. Status is `lobby`, `voting` or `matched`; rooms expire after 24h and are pruned daily (`routes/console.php`).
+  - `match_participants`: guests are allowed. Identity is a secret token kept in the session, and only its sha256 is stored.
+  - `match_votes`
+- **Decks:** `App\Services\MovieNightDealer` builds them from TMDB `/discover/movie` (genres, runtime, rating, region, streaming services) and provides "where to watch". Streaming data comes from JustWatch via TMDB, so keep the "data by JustWatch" credit.
+- **Rules (covered in `tests/Feature/MovieNightTest.php`):**
+  - A match needs a like from every participant.
+  - Only the host can start, pick, deal more cards, or start a new round.
+  - Votes for movies outside the deck, or from non-participants, are ignored.
+- **Test database:** tests run on in-memory SQLite (`phpunit.xml`) and never touch the dev database.
+
+### Growth features
+- **Room creation:** `App\Services\MovieNightRooms` is the one place rooms are created and decks are dealt. The create form, "Decide for me", themes, Watchlist Showdown and "Us" rooms all go through it.
+- **"Decide for me":** `POST /movie-night/quick` with an optional `theme`. It makes a solo room that is already voting, and the first like is "Tonight's pick".
+- **Themes:** `App\Support\MovieNightThemes` holds whitelisted TMDB discover presets. Only these keys are accepted.
+- **Watchlist Showdown:** `source=watchlist`. When the host starts, the deck is rebuilt from the watchlists of every signed-in participant, with titles saved by more people first.
+- **"Us" rooms:** `is_persistent`, no expiry, a maximum of 2 people, and an account is required to join.
+  - A match always needs 2 likes.
+  - Matches collect in `match_results` and appear in the "Our matches" tab.
+  - The deck refills automatically.
+  - Logged-in users are recognised by account across devices (`MatchRoom::participantFor`). A leftover session token is never honoured for a different account.
+- **Sharing images:** `App\Services\MovieNightCards` draws them with GD and the bundled Figtree TTF in `resources/fonts`. The font is a Latin subset, so the images contain no ★ or emoji. Images are cached in `storage/app/private/movie-night-cards`.
+  - `/{code}/preview.png`: 1200×630 Open Graph invite or match image. `show.blade.php` pushes the `og:` meta tags.
+  - `/{code}/card.png`: 1080×1350 story card.
+  - Do not call `imageantialias()`: GD then ignores alpha and gradients turn into solid bands.
+- **QR code:** `bacon/bacon-qr-code` renders an inline SVG in the lobby, and in "Us" rooms while waiting for the partner.
+- **Stats:** `movie_night_events` stores anonymous events with no names, emails, IPs or user ids. `/movie-night/stats` is gated by `view-movie-night-stats`, meaning emails listed in the `ADMIN_EMAILS` env var (`config/envydeo.php`).
+
 ## UI system (Tailwind 4 + DaisyUI 5)
 
 - **Theme and tokens:** `resources/css/app.css` defines a single dark DaisyUI theme `envydeo` (`data-theme` on `<html>`). Tokens are `brand-*` (logo green), `ink-*` (surfaces) and the Figtree font. Utilities: `shell` (page container), `page-top` (clears the fixed nav), `section-title`, `btn-brand`, `btn-glass`, `no-scrollbar`.

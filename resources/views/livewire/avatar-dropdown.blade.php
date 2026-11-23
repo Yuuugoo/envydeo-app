@@ -32,6 +32,14 @@
             <a href="{{ route('watchlist.index') }}" role="menuitem" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-200 transition hover:bg-white/5 hover:text-white">
                 <x-icon name="bookmark" class="size-5 text-gray-400" /> Watchlist
             </a>
+            <a href="{{ route('movie-night.us') }}" role="menuitem" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-200 transition hover:bg-white/5 hover:text-white">
+                <x-icon name="heart" class="size-5 text-gray-400" /> “Us” rooms
+            </a>
+            @can('view-movie-night-stats')
+                <a href="{{ route('movie-night.stats') }}" role="menuitem" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-200 transition hover:bg-white/5 hover:text-white">
+                    <x-icon name="adjustments" class="size-5 text-gray-400" /> Movie Night stats
+                </a>
+            @endcan
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
                 <button type="submit" role="menuitem" class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-200 transition hover:bg-white/5 hover:text-white">
