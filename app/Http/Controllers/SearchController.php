@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Tmdb;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 
 class SearchController extends Controller
 {
-    public function results(Request $request)
+    public function results(Request $request, Tmdb $tmdb)
 {
     $query = $request->input('query');
     $mediaType = $request->input('media_type', 'all');
@@ -15,23 +15,27 @@ class SearchController extends Controller
     $page = $request->input('page', 1);
 
     if (empty($query)) {
-        return redirect()->route('home');
+        return redirect()->route('movie.index');
     }
 
-    $token = config('services.tmdb.token');
+    $page = max(1, min(500, (int) $page));
     $tvResults = [];
     $movieResults = [];
 
+    // Run the TV and movie searches in parallel (cached for 10 minutes).
+    $searchParams = ['query' => $query, 'include_adult' => 'false', 'page' => $page];
+    $requests = [];
     if ($mediaType === 'all' || $mediaType === 'tv') {
-        $tvResponse = Http::withToken($token)
-            ->get('https://api.themoviedb.org/3/search/tv', [
-                'query' => $query,
-                'include_adult' => false,
-                'page' => $page,
-            ]);
-        
-        if ($tvResponse->successful()) {
-            $tvData = $tvResponse->json();
+        $requests['tv'] = ['/search/tv', $searchParams];
+    }
+    if ($mediaType === 'all' || $mediaType === 'movie') {
+        $requests['movie'] = ['/search/movie', $searchParams];
+    }
+    $responses = $tmdb->many($requests, Tmdb::MINUTES_10);
+
+    if (isset($responses['tv'])) {
+        if (isset($responses['tv']['results'])) {
+            $tvData = $responses['tv'];
             $tvResults = $tvData['results'];
             $tvTotalPages = $tvData['total_pages'] ?? 1;
             $tvTotalResults = $tvData['total_results'] ?? 0;
@@ -46,16 +50,9 @@ class SearchController extends Controller
         }
     }
 
-    if ($mediaType === 'all' || $mediaType === 'movie') {
-        $movieResponse = Http::withToken($token)
-            ->get('https://api.themoviedb.org/3/search/movie', [
-                'query' => $query,
-                'include_adult' => false,
-                'page' => $page,
-            ]);
-        
-        if ($movieResponse->successful()) {
-            $movieData = $movieResponse->json();
+    if (isset($responses['movie'])) {
+        if (isset($responses['movie']['results'])) {
+            $movieData = $responses['movie'];
             $movieResults = $movieData['results'];
             $movieTotalPages = $movieData['total_pages'] ?? 1;
             $movieTotalResults = $movieData['total_results'] ?? 0;

@@ -91,8 +91,9 @@
             >
 
                 @if($movie['media_type'] == 'TV')
-                    <img src="{{ 'https://image.tmdb.org/t/p/original/' . $movie['backdrop_path'] }}"
+                    <img src="{{ 'https://image.tmdb.org/t/p/w1280' . $movie['backdrop_path'] }}"
                         class="w-full h-full object-cover object-center"
+                        @if($key === 0) fetchpriority="high" @else loading="lazy" @endif
                         alt="{{ $movie['title'] }}" />
 
                     <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent"></div>
@@ -141,8 +142,9 @@
                         </div>
                     </div>
                 @else
-                    <img src="{{ 'https://image.tmdb.org/t/p/original/' . $movie['backdrop_path'] }}"
+                    <img src="{{ 'https://image.tmdb.org/t/p/w1280' . $movie['backdrop_path'] }}"
                         class="w-full h-full object-cover object-center"
+                        @if($key === 0) fetchpriority="high" @else loading="lazy" @endif
                         alt="{{ $movie['title'] }}" />
 
                     <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent"></div>
@@ -372,7 +374,7 @@
                                         <template x-for="(movie, movieIndex) in chunk" :key="`${index}-${movieIndex}`">
                                             <div class="mt-4 relative group">
                                                 <a :href="`/movies/${movie.id}`">
-                                                    <img :src="`https://image.tmdb.org/t/p/w500/${movie.poster_path}`"
+                                                    <img :src="`https://image.tmdb.org/t/p/w342${movie.poster_path}`"
                                                         :alt="movie.title"
                                                         class="w-full block transform transition-all duration-300 ease-in-out hover:scale-105 hover:border-2 hover:border-green-600 rounded-lg shadow">
                                                 </a>
@@ -608,7 +610,7 @@
                                 <template x-for="(movie, movieIndex) in chunk" :key="`${index}-${movieIndex}`">
                                     <div class="mt-4 relative group">
                                         <a :href="`/movies/${movie.id}`">
-                                            <img :src="`https://image.tmdb.org/t/p/w500/${movie.poster_path}`"
+                                            <img :src="`https://image.tmdb.org/t/p/w342${movie.poster_path}`"
                                                 :alt="movie.title"
                                                 class="w-full block transform transition-all duration-300 ease-in-out hover:scale-105 hover:border-2 hover:border-green-600 rounded-lg shadow"
                                                 loading="lazy">
@@ -805,7 +807,7 @@
                                 <template x-for="(movie, movieIndex) in chunk" :key="`${index}-${movieIndex}`">
                                     <div class="mt-1 relative group">
                                         <a :href="`/movies/${movie.id}`">
-                                            <img :src="`https://image.tmdb.org/t/p/w500/${movie.poster_path}`"
+                                            <img :src="`https://image.tmdb.org/t/p/w342${movie.poster_path}`"
                                                 :alt="movie.title"
                                                 class="w-full block transform transition-all duration-300 ease-in-out hover:scale-105 hover:border-2 hover:border-green-600 rounded-lg shadow"
                                                 loading="lazy">
@@ -868,7 +870,7 @@
         <!-- Collage Background -->
         <div class="absolute inset-0 z-0 grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-1 opacity-30 blur-sm">
             <template x-for="(poster, index) in collage" :key="index">
-                <img :src="`https://image.tmdb.org/t/p/w500${poster}`" class="w-full h-full object-cover" loading="lazy" />
+                <img :src="`https://image.tmdb.org/t/p/w185${poster}`" class="w-full h-full object-cover" loading="lazy" />
             </template>
         </div>
 
@@ -1061,7 +1063,7 @@
                                 <template x-for="(movie, movieIndex) in chunk" :key="`${index}-${movieIndex}`">
                                     <div class="mt-1 relative group">
                                         <a :href="`/movies/${movie.id}`">
-                                            <img :src="`https://image.tmdb.org/t/p/w500/${movie.poster_path}`"
+                                            <img :src="`https://image.tmdb.org/t/p/w342${movie.poster_path}`"
                                                 :alt="movie.title"
                                                 class="w-full block transform transition-all duration-300 ease-in-out hover:scale-105 hover:border-2 hover:border-green-600 rounded-lg shadow"
                                                 loading="lazy">
@@ -1251,7 +1253,7 @@
                                 <template x-for="(movie, movieIndex) in chunk" :key="`${index}-${movieIndex}`">
                                     <div class="mt-1 relative group">
                                         <a :href="`/movies/${movie.id}`">
-                                            <img :src="`https://image.tmdb.org/t/p/w500/${movie.poster_path}`"
+                                            <img :src="`https://image.tmdb.org/t/p/w342${movie.poster_path}`"
                                                 :alt="movie.title"
                                                 class="w-full block transform transition-all duration-300 ease-in-out hover:scale-105 hover:border-2 hover:border-green-600 rounded-lg shadow"
                                                 loading="lazy">
@@ -1437,7 +1439,7 @@
                                 <template x-for="(movie, movieIndex) in chunk" :key="`${index}-${movieIndex}`">
                                     <div class="mt-1 relative group">
                                         <a :href="`/movies/${movie.id}`">
-                                            <img :src="`https://image.tmdb.org/t/p/w500/${movie.poster_path}`"
+                                            <img :src="`https://image.tmdb.org/t/p/w342${movie.poster_path}`"
                                                 :alt="movie.title"
                                                 class="w-full block transform transition-all duration-300 ease-in-out hover:scale-105 hover:border-2 hover:border-green-600 rounded-lg shadow"
                                                 loading="lazy">
@@ -1629,7 +1631,7 @@
                                 <template x-for="(movie, movieIndex) in chunk" :key="`${index}-${movieIndex}`">
                                     <div class="mt-1 relative group">
                                         <a :href="`/movies/${movie.id}`">
-                                            <img :src="`https://image.tmdb.org/t/p/w500/${movie.poster_path}`"
+                                            <img :src="`https://image.tmdb.org/t/p/w342${movie.poster_path}`"
                                                 :alt="movie.title"
                                                 class="w-full block transform transition-all duration-300 ease-in-out hover:scale-105 hover:border-2 hover:border-green-600 rounded-lg shadow"
                                                 loading="lazy">
@@ -1816,7 +1818,7 @@
                                 <template x-for="(movie, movieIndex) in chunk" :key="`${index}-${movieIndex}`">
                                     <div class="mt-1 relative group">
                                         <a :href="`/movies/${movie.id}`">
-                                            <img :src="`https://image.tmdb.org/t/p/w500/${movie.poster_path}`"
+                                            <img :src="`https://image.tmdb.org/t/p/w342${movie.poster_path}`"
                                                 :alt="movie.title"
                                                 class="w-full block transform transition-all duration-300 ease-in-out hover:scale-105 hover:border-2 hover:border-green-600 rounded-lg shadow"
                                                 loading="lazy">
@@ -2002,7 +2004,7 @@
                                 <template x-for="(movie, movieIndex) in chunk" :key="`${index}-${movieIndex}`">
                                     <div class="mt-1 relative group">
                                         <a :href="`/movies/${movie.id}`">
-                                            <img :src="`https://image.tmdb.org/t/p/w500/${movie.poster_path}`"
+                                            <img :src="`https://image.tmdb.org/t/p/w342${movie.poster_path}`"
                                                 :alt="movie.title"
                                                 class="w-full block transform transition-all duration-300 ease-in-out hover:scale-105 hover:border-2 hover:border-green-600 rounded-lg shadow"
                                                 loading="lazy">
@@ -2190,7 +2192,7 @@
                                 <template x-for="(movie, movieIndex) in chunk" :key="`${index}-${movieIndex}`">
                                     <div class="mt-1 relative group">
                                         <a :href="`/movies/${movie.id}`">
-                                            <img :src="`https://image.tmdb.org/t/p/w500/${movie.poster_path}`"
+                                            <img :src="`https://image.tmdb.org/t/p/w342${movie.poster_path}`"
                                                 :alt="movie.title"
                                                 class="w-full block transform transition-all duration-300 ease-in-out hover:scale-105 hover:border-2 hover:border-green-600 rounded-lg shadow"
                                                 loading="lazy">
@@ -2378,7 +2380,7 @@
                                 <template x-for="(movie, movieIndex) in chunk" :key="`${index}-${movieIndex}`">
                                     <div class="mt-1 relative group">
                                         <a :href="`/movies/${movie.id}`">
-                                            <img :src="`https://image.tmdb.org/t/p/w500/${movie.poster_path}`"
+                                            <img :src="`https://image.tmdb.org/t/p/w342${movie.poster_path}`"
                                                 :alt="movie.title"
                                                 class="w-full block transform transition-all duration-300 ease-in-out hover:scale-105 hover:border-2 hover:border-green-600 rounded-lg shadow"
                                                 loading="lazy">
@@ -2565,7 +2567,7 @@
                                 <template x-for="(movie, movieIndex) in chunk" :key="`${index}-${movieIndex}`">
                                     <div class="mt-1 relative group">
                                         <a :href="`/movies/${movie.id}`">
-                                            <img :src="`https://image.tmdb.org/t/p/w500/${movie.poster_path}`"
+                                            <img :src="`https://image.tmdb.org/t/p/w342${movie.poster_path}`"
                                                 :alt="movie.title"
                                                 class="w-full block transform transition-all duration-300 ease-in-out hover:scale-105 hover:border-2 hover:border-green-600 rounded-lg shadow"
                                                 loading="lazy">

@@ -23,7 +23,7 @@
                     <div class="relative">
                         <input
                             x-ref="searchInput"
-                            wire:model.live="search"
+                            wire:model.live.debounce.400ms="search"
                             type="text"
                             class="bg-gray-800 rounded-full w-full px-4 pl-10 py-2 focus:outline-none focus:shadow-outline text-sm"
                             placeholder="Search Movies & TV Shows"

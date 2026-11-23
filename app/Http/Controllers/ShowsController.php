@@ -2,93 +2,67 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
+use App\Services\Tmdb;
 
 class ShowsController extends Controller
 {
-    
+    public function __construct(private Tmdb $tmdb) {}
+
     public function list()
     {
-        $page = request()->get('page', 1);
+        $page = max(1, min(500, (int) request()->get('page', 1)));
 
-        $popularTV = Http::withToken(config('services.tmdb.token'))
-            ->get('https://api.themoviedb.org/3/trending/tv/day?', [
-                'page' => $page,
-            ])
-            ->json();
+        $popularTV = $this->tmdb->get('/trending/tv/day', ['page' => $page], Tmdb::HOUR);
 
-        $genreLists = Http::withToken(config('services.tmdb.token'))
-            ->get('https://api.themoviedb.org/3/genre/movie/list')
-            ->json()['genres'];
-        
-        $genres = collect($genreLists)->mapWithKeys(function ($genre){
-            return [$genre['id'] => $genre['name']];
-        });
-
-        $totalPages = $popularTV['total_pages'];
-        $currentPage = $popularTV['page'];
-
-        return view('shows.index',[
-            'popularTV' => $popularTV,
-            'genres' => $genres,
-            'totalPages' => $totalPages,
-            'currentPage' => $currentPage,
-
+        return view('shows.index', [
+            'popularTV' => ['results' => $popularTV['results'] ?? []] + $popularTV,
+            'genres' => $this->tmdb->tvGenres(),
+            'totalPages' => min($popularTV['total_pages'] ?? 1, 500),
+            'currentPage' => $popularTV['page'] ?? $page,
         ]);
     }
 
     public function show($id)
     {
-        $selectedTV = Http::withToken(config('services.tmdb.token'))
-            ->get('https://api.themoviedb.org/3/tv/'. $id.'?append_to_response=credits,videos,images')
-            ->json();
+        $selectedTV = $this->tmdb->get("/tv/{$id}", ['append_to_response' => 'credits,videos,images'], Tmdb::HOURS_6);
 
-        $genres = collect($selectedTV['genres'])->pluck('name')->toArray();
+        abort_if(empty($selectedTV['id']), 404);
 
-        $selectedTVDetails = [
-            'media_type' => 'TV',
-            'genres' => $genres,
+        // Every season + recommendations + similar, all requested in parallel.
+        $requests = [
+            'recommendations' => ["/tv/{$id}/recommendations"],
+            'similar' => ["/tv/{$id}/similar"],
         ];
 
-        $seasonsWithEpisodes = [];
-        
-
-        foreach ($selectedTV['seasons'] as $season) {
-            // Skip special seasons (season 0)
-            if ($season['season_number'] === 0) continue;
-            
-            $seasonData = Http::withToken(config('services.tmdb.token'))
-                ->get("https://api.themoviedb.org/3/tv/{$id}/season/{$season['season_number']}")
-                ->json();
-            
-            $seasonsWithEpisodes[$season['season_number']] = $seasonData['episodes'];
+        foreach ($selectedTV['seasons'] ?? [] as $season) {
+            if ($season['season_number'] === 0) {
+                continue; // skip "Specials"
+            }
+            $requests['season-'.$season['season_number']] = ["/tv/{$id}/season/{$season['season_number']}"];
         }
 
-        $recommendedTV = Http::withToken(config('services.tmdb.token'))
-            ->get('https://api.themoviedb.org/3/tv/'. $id.'/recommendations')
-            ->json()['results'];
+        $responses = $this->tmdb->many($requests, Tmdb::HOURS_6);
 
-        $similarTV = Http::withToken(config('services.tmdb.token'))
-            ->get('https://api.themoviedb.org/3/tv/'. $id.'/similar')
-            ->json()['results'];
+        $seasonsWithEpisodes = [];
+        foreach ($responses as $key => $data) {
+            if (str_starts_with($key, 'season-')) {
+                // Only the fields the page uses; full episodes carry huge guest_stars/crew arrays.
+                $seasonsWithEpisodes[(int) substr($key, 7)] = collect($data['episodes'] ?? [])
+                    ->map(fn ($e) => collect($e)->only(['id', 'name', 'episode_number', 'still_path', 'runtime', 'overview', 'vote_average', 'air_date']))
+                    ->values()
+                    ->all();
+            }
+        }
 
-        $genreLists = Http::withToken(config('services.tmdb.token'))
-            ->get('https://api.themoviedb.org/3/genre/tv/list')
-            ->json()['genres'];
-        
-        $genres = collect($genreLists)->mapWithKeys(function ($genre) {
-            return [$genre['id'] => $genre['name']];
-        });    
-
-        // dump($selectedTV);
-        // dump($recommendedTV);
         return view('shows.details', [
             'tvShow' => $selectedTV,
-            'selectedTVDetails' => $selectedTVDetails,
-            'genres' => $genres,
-            'similarTV' => $similarTV,
-            'recommendedTV' => $recommendedTV,
+            'selectedTVDetails' => [
+                'media_type' => 'TV',
+                'genres' => collect($selectedTV['genres'] ?? [])->pluck('name')->toArray(),
+            ],
+            'genres' => $this->tmdb->tvGenres(),
+            'similarTV' => $responses['similar']['results'] ?? [],
+            'recommendedTV' => $responses['recommendations']['results'] ?? [],
             'episodes' => $seasonsWithEpisodes,
         ]);
     }

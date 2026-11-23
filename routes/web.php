@@ -11,14 +11,14 @@ use App\Http\Controllers\WatchProgressController;
 
 Route::get('/', [MovieController::class, 'index'])->name('movie.index');
 Route::get('/movies', [MovieController::class, 'list'])->name('movie.list');
-Route::get('/movies/{id}', [MovieController::class, 'show'])->name('movie.show');
-Route::get('/movies/{id}/similar', [MovieController::class, 'getSimilarMovies']);
-Route::get('/movies/{id}/recommended', [MovieController::class, 'getRecommendedMovies']);
-Route::get('/movies/{id}/images', [MovieController::class, 'getMovieImages']);
+Route::get('/movies/{id}', [MovieController::class, 'show'])->whereNumber('id')->name('movie.show');
+Route::get('/movies/{id}/similar', [MovieController::class, 'getSimilarMovies'])->whereNumber('id');
+Route::get('/movies/{id}/recommended', [MovieController::class, 'getRecommendedMovies'])->whereNumber('id');
+Route::get('/movies/{id}/images', [MovieController::class, 'getMovieImages'])->whereNumber('id');
 
 Route::get('/api/movies/popular', [MovieController::class, 'loadPopularMovies']);
 Route::get('/api/movies/top-rated', [MovieController::class, 'loadTopRatedMovies']);
-Route::get('/api/movies/genre/{id}', [MovieController::class, 'loadMoviesByGenre']);
+Route::get('/api/movies/genre/{id}', [MovieController::class, 'loadMoviesByGenre'])->whereNumber('id');
 
 Route::get('/api/movies/collage', [MovieController::class, 'collage']);
 
@@ -26,7 +26,7 @@ Route::get('/api/tv/popular', [MovieController::class, 'loadPopularTV']);
 
 
 Route::get('/shows', [ShowsController::class, 'list'])->name('show.list');
-Route::get('/shows/{id}', [ShowsController::class, 'show'])->name('show.show');
+Route::get('/shows/{id}', [ShowsController::class, 'show'])->whereNumber('id')->name('show.show');
 
 Route::get('/search', [SearchController::class, 'results'])->name('search.results');
 

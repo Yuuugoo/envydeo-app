@@ -2,32 +2,29 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Models\Watchlist;
+use App\Services\Tmdb;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Http;
 
 class WatchlistController extends Controller
 {
-    public function index()
+    public function index(Tmdb $tmdb)
     {
         $user = Auth::user();
 
-        if (!$user) {
+        if (! $user) {
             return redirect()->route('login')->with('error', 'Please login to view your watchlist.');
         }
 
-        $watchlistItems = \App\Models\Watchlist::where('user_id', $user->id)->get();
+        $tmdbIds = Watchlist::where('user_id', $user->id)->latest()->pluck('tmdb_id');
 
-        $movies = [];
+        // All watchlist movies fetched in parallel (and cached for a day).
+        $details = $tmdb->many(
+            $tmdbIds->mapWithKeys(fn ($id) => [$id => ["/movie/{$id}"]])->all(),
+            Tmdb::DAY
+        );
 
-        foreach ($watchlistItems as $item) {
-            $response = Http::withToken(config('services.tmdb.token'))
-                ->get("https://api.themoviedb.org/3/movie/{$item->tmdb_id}");
-
-            if ($response->successful()) {
-                $movies[] = $response->json();
-            }
-        }
+        $movies = collect($details)->filter(fn ($movie) => ! empty($movie['id']))->values()->all();
 
         return view('watchlist', compact('movies'));
     }

@@ -1,6 +1,6 @@
 <div class="mt-8 relative group">
     <a href="{{ route('show.show', $show['id']) }}">
-        <img src="{{ 'https://image.tmdb.org/t/p/w500/' .$show['poster_path'] }}" alt="movie_poster" class="w-42 md:w-full block md:hover:opacity-75 transition ease-in-out duration-150">
+        <img src="{{ 'https://image.tmdb.org/t/p/w342' .$show['poster_path'] }}" loading="lazy" alt="{{ $show['name'] ?? 'show poster' }}" class="w-42 md:w-full block md:hover:opacity-75 transition ease-in-out duration-150">
     </a>
     <div class="absolute bottom-0 left-0 w-full bg-black bg-opacity-60 text-white p-2 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
         <a href="{{ route('show.show', $show['id']) }}" class="text-md md:text-lg mt-2 lg:hover:text-gray-300">{{ $show['name'] }} </a>

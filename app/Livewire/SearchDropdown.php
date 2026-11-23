@@ -3,7 +3,7 @@
 namespace App\Livewire;
 
 use Livewire\Component;
-use Illuminate\Support\Facades\Http;
+use App\Services\Tmdb;
 
 class SearchDropdown extends Component
 {
@@ -17,17 +17,13 @@ class SearchDropdown extends Component
 
     public function render()
     {
-        $searchResults = [];
+        $searchResults = collect();
 
         if (strlen($this->search) >= 2) {
-            $token = config('services.tmdb.token');
-
-            $results = Http::withToken($token)
-                ->get('https://api.themoviedb.org/3/search/multi', [
-                    'query' => $this->search,
-                    'include_adult' => false,
-                ])
-                ->json();
+            $results = app(Tmdb::class)->get('/search/multi', [
+                'query' => trim($this->search),
+                'include_adult' => 'false',
+            ], Tmdb::MINUTES_10);
 
             if (isset($results['results'])) {
                 $searchResults = collect($results['results'])
