@@ -1,30 +1,17 @@
 <x-app-layout>
-    <div class="container max-w-7xl mx-auto px-4 py-6">
-        <h2 class="font-bold text-xl text-white leading-tight mb-6">
-            {{ __('EDIT PROFILE') }}
-        </h2>
-        
-        <div class="max-w-7xl mx-auto space-y-6">
-            <div class="flex justify-center">
-                <div class="w-full max-w-xl">
-                    @include('profile.partials.update-profile-information-form')
-                </div>
-            </div>
-            
-            <!-- <div class="flex justify-center">
-                <div class="w-full max-w-xl">
+    <x-slot name="title">Profile</x-slot>
 
-                    @include('profile.partials.update-password-form')
+    <header class="mb-10">
+        <p class="text-xs font-bold uppercase tracking-[0.18em] text-brand-400">Account</p>
+        <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-white md:text-5xl">Edit profile</h1>
+    </header>
 
-                </div>
-            </div>
-
-            <div class="flex justify-center">
-                <div class="w-full max-w-xl">
-
-                        @include('profile.partials.delete-user-form')
-                </div>
-            </div> -->
-        </div>
+    <div class="mx-auto max-w-xl rounded-3xl bg-ink-900/70 p-6 ring-1 ring-white/5 sm:p-8">
+        @include('profile.partials.update-profile-information-form')
     </div>
+
+    {{-- Password and account deletion are not exposed yet:
+        @include('profile.partials.update-password-form')
+        @include('profile.partials.delete-user-form')
+    --}}
 </x-app-layout>

@@ -56,7 +56,7 @@ app/
     AvatarDropdown.php               navbar user menu
   Models/  User (UUID PK, HasMedia 'avatar'), OAuthProvider, Watchlist, WatchProgress
   Services/Tmdb.php                  TMDB client + cache (see above)
-  View/Components/  MovieCard, ShowCard, AppLayout, GuestLayout
+  View/Components/  AppLayout, GuestLayout
 database/migrations/                 users (uuid), cache, jobs, media, o_auth_providers, watchlist, watch_progress
 resources/
   css/app.css                        Tailwind 4 + DaisyUI plugin + @source globs
@@ -70,10 +70,9 @@ resources/
     shows/index|details.blade.php    trending TV grid; show page (episodes by season, similar, images)
     results.blade.php                search results with media-type / sort filters
     watchlist.blade.php              user's watchlist grid
-    components/movie-card|show-card  poster cards used by grids
     livewire/*.blade.php             Livewire component views
     auth/*, profile/*                Breeze views
-    details.blade.php, dashboard.blade.php, layouts/navigation.blade.php   UNUSED leftovers
+    components/*                     logo, icon, poster-row, media-card, pagination, video-modal, empty-state + Breeze form parts
 routes/web.php                       site + /api routes; routes/auth.php Breeze routes
 public/img/logo/                     Envydeo logos; public/build = Vite output (git-ignored)
 ```
@@ -98,12 +97,21 @@ public/img/logo/                     Envydeo logos; public/build = Vite output (
 
 ## Home page (index.blade.php)
 
-The hero carousel is rendered on the server from `$moviesWithDetails` and holds 15 trending movies and shows.
-"Continue watching" (logged-in users only) comes from `WatchProgress`. The remaining rows are Alpine
-components that `fetch()` an `/api/*` endpoint when they scroll into view: popular, top rated, a poster-collage
-header, then genre rows (Action 28, Animation 16, Comedy 35, Documentary 99, History 36, Horror 27,
-Romance 10749, Mystery 9648, Sci-Fi 878). Each genre row is a copy-pasted block of about 190 lines, which is a
-good candidate for a shared Blade component.
+- **Hero:** rendered on the server from `$moviesWithDetails` (15 trending movies and shows). It uses Alpine `heroCarousel` (`resources/js/components/hero-carousel.js`): it **autoplays every 5s**, loops endlessly, and supports arrows, dots, keys and swipe. It pauses only while a video is open or the tab is hidden. Keep the autoplay; the owner wants it.
+- **Rows:** each row is one `<x-poster-row>`: Continue Watching (logged-in users, items preloaded), Popular, Trending TV, Top Rated, a "Discover by genre" banner with jump chips, then genre rows from the `$genreRows` array in the view.
+
+## UI system (Tailwind 4 + DaisyUI 5)
+
+- **Theme and tokens:** `resources/css/app.css` defines a single dark DaisyUI theme `envydeo` (`data-theme` on `<html>`). Tokens are `brand-*` (logo green), `ink-*` (surfaces) and the Figtree font. Utilities: `shell` (page container), `page-top` (clears the fixed nav), `section-title`, `btn-brand`, `btn-glass`, `no-scrollbar`.
+- **Alpine:** it comes from Livewire 3. `resources/js/app.js` only registers `Alpine.data(...)` components on `alpine:init`. Never import or start a second Alpine.
+- **Blade components:**
+  - `<x-logo>`: SVG eye/play mark plus the "envy**deo**" wordmark. `public/favicon.svg` uses the same mark.
+  - `<x-icon name="…">`: inline Heroicons; names ending in `-solid` are filled.
+  - `<x-poster-row>`: the **endless** swipeable row (`resources/js/components/poster-row.js`). It renders 3 copies and silently re-centres after each scroll, so the arrows and swipes never hit an end. It has `poster` and `backdrop` variants.
+  - `<x-media-card>`: grid card for movies, TV, search and watchlist.
+  - `<x-pagination>`, `<x-video-modal>` (teleported iframe modal), `<x-empty-state>`.
+- **Layouts:** `layouts/main` (`@extends`) and `layouts/app` / `layouts/guest` (Breeze components) share `layouts/partials/head`. The nav is `layouts/nav.blade.php`: fixed and transparent, turning solid on scroll, with a drawer below `lg`.
+- **Responsive targets:** verified at 360, 390, 768, 1024 and 1440px with no horizontal overflow.
 
 ## Local development (Windows / XAMPP machine)
 

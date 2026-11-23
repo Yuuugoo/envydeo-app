@@ -5,16 +5,231 @@
 @source '../**/*.blade.php';
 @source '../**/*.js';
 
-@plugin "daisyui";
+/* ---------------------------------------------------------------------------
+ | DaisyUI — single custom dark theme built around the logo green
+ * ------------------------------------------------------------------------ */
+@plugin "daisyui" {
+    themes: false;
+}
 
+@plugin "daisyui/theme" {
+    name: "envydeo";
+    default: true;
+    prefersdark: true;
+    color-scheme: dark;
+
+    --color-base-100: #0a0e15;
+    --color-base-200: #111722;
+    --color-base-300: #1a2230;
+    --color-base-content: #e7eaf0;
+    --color-primary: #2f8442;
+    --color-primary-content: #ffffff;
+    --color-secondary: #1a2230;
+    --color-secondary-content: #e7eaf0;
+    --color-accent: #62c374;
+    --color-accent-content: #06130a;
+    --color-neutral: #1a2230;
+    --color-neutral-content: #e7eaf0;
+    --color-info: #38bdf8;
+    --color-info-content: #04121b;
+    --color-success: #4caf62;
+    --color-success-content: #06130a;
+    --color-warning: #fbbf24;
+    --color-warning-content: #1c1302;
+    --color-error: #f05252;
+    --color-error-content: #ffffff;
+
+    --radius-selector: 0.5rem;
+    --radius-field: 0.625rem;
+    --radius-box: 0.875rem;
+    --size-selector: 0.25rem;
+    --size-field: 0.25rem;
+    --border: 1px;
+    --depth: 0;
+    --noise: 0;
+}
+
+/* ---------------------------------------------------------------------------
+ | Design tokens
+ * ------------------------------------------------------------------------ */
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --font-sans: 'Figtree', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+
+    /* Brand green, derived from the logo (#4C9A55) and tuned for a dark UI */
+    --color-brand-200: #b6e8c0;
+    --color-brand-300: #8ad99a;
+    --color-brand-400: #62c374;
+    --color-brand-500: #43a85a;
+    --color-brand-600: #2f8442;
+    --color-brand-700: #256a36;
+    --color-brand-800: #1b4e28;
+    --color-brand-900: #12341b;
+    --color-brand-950: #0a1f10;
+
+    /* Surfaces */
+    --color-ink-950: #0a0e15;
+    --color-ink-900: #0f141d;
+    --color-ink-850: #131a25;
+    --color-ink-800: #1a2230;
+    --color-ink-700: #252f40;
+    --color-ink-600: #344055;
 
     --breakpoint-sm: 40rem;
     --breakpoint-md: 48rem;
-    --breakpoint-lg: 65rem;
+    --breakpoint-lg: 64rem;
     --breakpoint-xl: 80rem;
     --breakpoint-2xl: 96rem;
+
+    --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+/* ---------------------------------------------------------------------------
+ | Base
+ * ------------------------------------------------------------------------ */
+@layer base {
+    html {
+        background-color: var(--color-ink-950);
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+        @apply min-h-svh bg-ink-950 font-sans text-gray-100 antialiased;
+    }
+
+    ::selection {
+        background: color-mix(in oklab, var(--color-brand-500) 45%, transparent);
+    }
+
+    :focus-visible {
+        outline: 2px solid var(--color-brand-400);
+        outline-offset: 2px;
+    }
+}
+
+[x-cloak] {
+    display: none !important;
+}
+
+/* ---------------------------------------------------------------------------
+ | Layout utilities
+ * ------------------------------------------------------------------------ */
+
+/* One page width for the whole site */
+@utility shell {
+    @apply mx-auto w-full max-w-[90rem] px-4 sm:px-6 lg:px-10;
+}
+
+/* Clears the fixed nav on pages without a full-bleed hero */
+@utility page-top {
+    @apply pt-24 md:pt-28;
+}
+
+@utility no-scrollbar {
+    scrollbar-width: none;
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+/* Section heading with a small brand accent bar */
+@utility section-title {
+    @apply flex items-center gap-3 text-lg font-bold tracking-tight text-white md:text-xl;
+    &::before {
+        content: '';
+        @apply h-5 w-1 rounded-full bg-brand-500;
+    }
+}
+
+/* Buttons */
+@utility btn-brand {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-brand-900/30 transition hover:bg-brand-500 active:scale-[0.98] md:text-base;
+}
+
+@utility btn-glass {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-white/10 px-5 py-2.5 text-sm font-semibold text-white ring-1 ring-white/15 backdrop-blur-md transition hover:bg-white/20 active:scale-[0.98] md:text-base;
+}
+
+/* ---------------------------------------------------------------------------
+ | Poster rows (see resources/js/components/poster-row.js)
+ * ------------------------------------------------------------------------ */
+.poster-row {
+    --per-view: 2.3;
+    --gap: 0.75rem;
+}
+.poster-row[data-variant='backdrop'] {
+    --per-view: 1.25;
+}
+@media (min-width: 40rem) {
+    .poster-row { --per-view: 3.3; }
+    .poster-row[data-variant='backdrop'] { --per-view: 2.2; }
+}
+@media (min-width: 48rem) {
+    .poster-row { --per-view: 4.3; --gap: 1rem; }
+    .poster-row[data-variant='backdrop'] { --per-view: 2.5; }
+}
+@media (min-width: 64rem) {
+    .poster-row { --per-view: 5; }
+    .poster-row[data-variant='backdrop'] { --per-view: 3; }
+}
+@media (min-width: 80rem) {
+    .poster-row { --per-view: 6; }
+    .poster-row[data-variant='backdrop'] { --per-view: 4; }
+}
+@media (min-width: 96rem) {
+    .poster-row { --per-view: 7; }
+}
+
+.poster-row__track {
+    display: flex;
+    gap: var(--gap);
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--row-pad, 0px);
+    padding-inline: var(--row-pad, 0px);
+    scrollbar-width: none;
+}
+.poster-row__track::-webkit-scrollbar {
+    display: none;
+}
+.poster-row__item {
+    flex: 0 0 calc((100% - 2 * var(--row-pad, 0px) - (var(--per-view) - 1) * var(--gap)) / var(--per-view));
+    scroll-snap-align: start;
+    min-width: 0;
+}
+
+/* Arrows only where a mouse can hover; touch users swipe */
+.poster-row__arrow {
+    display: none;
+}
+@media (hover: hover) and (min-width: 48rem) {
+    .poster-row__arrow {
+        display: flex;
+    }
+}
+
+/* Hover details only on hover-capable devices; titles under posters on touch */
+.hover-only {
+    display: none;
+}
+.touch-only {
+    display: block;
+}
+@media (hover: hover) and (pointer: fine) {
+    .hover-only {
+        display: block;
+    }
+    .touch-only {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}

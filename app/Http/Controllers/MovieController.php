@@ -18,6 +18,7 @@ class MovieController extends Controller
 
         return view('index', [
             'genres' => $this->tmdb->movieGenres(),
+            'tvGenres' => $this->tmdb->tvGenres(),
             'moviesWithDetails' => $moviesWithDetails,
             'continueWatchingMovies' => Auth::check() ? $this->getContinueWatchingMovies() : collect(),
         ]);

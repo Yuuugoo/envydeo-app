@@ -1,44 +1,25 @@
 @extends('layouts.main')
 
+@section('title', 'Movies')
+
 @section('content')
+<div class="shell page-top">
+    <header class="mb-8 md:mb-10">
+        <p class="text-xs font-bold uppercase tracking-[0.18em] text-brand-400">Now playing</p>
+        <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-white md:text-5xl">Movies in theaters</h1>
+        <p class="mt-2 text-sm text-gray-400">Fresh releases, updated daily · Page {{ $currentPage }} of {{ number_format($totalPages) }}</p>
+    </header>
 
-<div class="container max-w-7xl lg:ml-28 mx-auto px-4 md:pt-36 mb-10">
-    <div class="latest-movies">
-        <h2 class="uppercase tracking-wider text-green-600 text-lg font-semibold mb-4">
-            Latest Movies
-        </h2>
-    </div>
-
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-5">
-        @foreach($nowPlayingMovies as $movie)
-            <x-movie-card :movie="$movie" :genres="$genres" />
-        @endforeach
-    </div>
-
-    <div class="flex justify-center mt-10">
-        <div class="join shadow-md rounded-md">
-            @if($currentPage > 1)
-                <a href="{{ route('movie.list', ['page' => 1]) }}" class="join-item btn bg-gray-800 hover:bg-gray-700 text-white border-gray-700">«</a>
-                <a href="{{ route('movie.list', ['page' => $currentPage - 1]) }}" class="join-item btn bg-gray-800 hover:bg-gray-700 text-white border-gray-700">‹</a>
-            @endif
-            
-            @php
-                $startPage = max(1, $currentPage - 2);
-                $endPage = min($totalPages, $currentPage + 2);
-            @endphp
-            
-            @for ($i = $startPage; $i <= $endPage; $i++)
-                <a href="{{ route('movie.list', ['page' => $i]) }}" 
-                   class="join-item btn {{ $i == $currentPage ? 'bg-green-500 hover:bg-green-600 text-white border-green-600' : 'bg-gray-800 hover:bg-gray-700 text-white border-gray-700' }}">
-                    {{ $i }}
-                </a>
-            @endfor
-            
-            @if($currentPage < $totalPages)
-                <a href="{{ route('movie.list', ['page' => $currentPage + 1]) }}" class="join-item btn bg-gray-800 hover:bg-gray-700 text-white border-gray-700">›</a>
-                <a href="{{ route('movie.list', ['page' => $totalPages]) }}" class="join-item btn bg-gray-800 hover:bg-gray-700 text-white border-gray-700">»</a>
-            @endif
+    @if (count($nowPlayingMovies))
+        <div class="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            @foreach ($nowPlayingMovies as $movie)
+                <x-media-card :item="$movie" type="movie" :genres="$genres" />
+            @endforeach
         </div>
-    </div>
+    @else
+        <x-empty-state icon="film" title="No movies right now" message="We couldn’t load this page. Please try again in a moment." />
+    @endif
+
+    <x-pagination :current="$currentPage" :total="$totalPages" route="movie.list" />
 </div>
 @endsection

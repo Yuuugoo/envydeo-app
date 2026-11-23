@@ -1,636 +1,266 @@
 @extends('layouts.main')
 
+@section('title', $movie['title'])
+
+@php
+    $year = !empty($movie['release_date']) ? substr($movie['release_date'], 0, 4) : null;
+    $runtime = !empty($movie['runtime']) ? floor($movie['runtime'] / 60) . 'h ' . ($movie['runtime'] % 60) . 'm' : null;
+    $videos = collect($movie['videos']['results'] ?? [])->where('site', 'YouTube');
+    $trailer = $videos->firstWhere('type', 'Trailer') ?? $videos->first();
+    $cast = collect($movie['credits']['cast'] ?? [])->take(12);
+    $directors = collect($movie['credits']['crew'] ?? [])->where('job', 'Director')->pluck('name')->unique()->take(2);
+    $money = fn ($v) => !empty($v) ? '$' . number_format($v) : null;
+    $facts = array_filter([
+        'Status' => $movie['status'] ?? null,
+        'Release date' => !empty($movie['release_date']) ? \Carbon\Carbon::parse($movie['release_date'])->format('M j, Y') : null,
+        'Director' => $directors->implode(', ') ?: null,
+        'Original language' => !empty($movie['original_language']) ? strtoupper($movie['original_language']) : null,
+        'Budget' => $money($movie['budget'] ?? null),
+        'Revenue' => $money($movie['revenue'] ?? null),
+    ]);
+@endphp
+
 @section('content')
-<div class="movie-info border-b border-gray-800">
-    <div class="relative lg:-mt-28 lg:h-screen lg:max-h-[38rem] h-full">
-        <div class="w-full pb-48 md:pb-0 lg:pb-0 md:h-full relative">
-            <img src="{{ 'https://image.tmdb.org/t/p/original/' . $movie['backdrop_path'] }}"
-                alt="{{ $movie['title'] }}"
-                class="w-full h-full object-cover object-center">
-        </div>
-        <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent"></div>
-        
-        <div class="absolute max-w-xl bottom-0 left-6 mt-64 md:mt-72 md:bottom-16 md:max-w-2xl lg:mt-0 lg:bottom-8 lg:left-28 text-white space-y-4 z-10">
-            <span class="bg-gray-900 px-3 py-1 rounded-full text-xs font-semibold">{{ $selectedMovieDetails['media_type']}}</span>
-            <h2 class="text-xl mt-3 md:text-4xl font-bold mb-2 md:mb-4 hover:text-green-600">{{ $movie['title'] }}</h2>
-            <p class="text-xs md:text-sm text-gray-300">
-                {{ floor($movie['runtime'] / 60) }}h {{ $movie['runtime'] % 60 }}m •
-                {{ \Carbon\Carbon::parse($movie['release_date'])->format('Y') }} •
-                {{ implode(' • ', $selectedMovieDetails['genres']) }}
-            </p>
-            
-            <div class="flex flex-col md:flex-row gap-4 mt-4">
-                <div x-data="{ 
-                    isOpen: false,
-                    movieId: {{ $movie['id'] }},
-                    userId: '{{ auth()->id() }}',
-                    csrfToken: '{{ csrf_token() }}',
-                    lastProgressUpdate: 0,
-                    progressUpdateThrottle: 5000,
-                    resumeTimestamp: 0,
-                    
-                    async fetchWatchProgress() {
-                        if (!this.userId) {
-                            return;
-                        }
-                        
-                        try {
-                            const response = await fetch('/watch-progress', {
-                                method: 'GET',
-                                headers: {
-                                    'Accept': 'application/json',
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': this.csrfToken,
-                                    'X-Requested-With': 'XMLHttpRequest'
-                                }
-                            });
-                            
-                            if (!response.ok) {
-                                return;
-                            }
-                            
-                            const result = await response.json();
-                            
-                            if (result.success && result.data) {
-                                const movieProgress = result.data.find(progress => 
-                                    progress.tmdb_id == this.movieId && progress.media_type === 'movie'
-                                );
+{{-- ===================================================================== HERO --}}
+<section class="relative isolate overflow-hidden">
+    @if (!empty($movie['backdrop_path']))
+        <img src="https://image.tmdb.org/t/p/w1280{{ $movie['backdrop_path'] }}" alt="" fetchpriority="high"
+             class="absolute inset-x-0 top-0 -z-10 h-[34rem] w-full object-cover object-[center_20%] md:h-[44rem]">
+    @endif
+    <div class="absolute inset-x-0 top-0 -z-10 h-[34rem] bg-gradient-to-t from-ink-950 via-ink-950/70 to-ink-950/20 md:h-[44rem]"></div>
+    <div class="absolute inset-x-0 top-0 -z-10 hidden h-[44rem] bg-gradient-to-r from-ink-950/90 via-ink-950/30 to-transparent md:block"></div>
 
-                                if (movieProgress) {
-                                    if (movieProgress.watched && movieProgress.duration && 
-                                        movieProgress.watched > 30 && 
-                                        movieProgress.watched < (movieProgress.duration * 0.9)) {
-                                        this.resumeTimestamp = Math.floor(movieProgress.watched);
-                                    }
-                                }
-                            }
-                        } catch (error) {
-                            console.error('Error fetching watch progress:', error);
-                        }
-                    },
-                    
-                    initProgressTracking() {
-                        if (!this.userId) {
-                            return;
-                        }
-                        
-                        window.addEventListener('message', ({ origin, data }) => {
-                            if (origin !== 'https://vidfast.pro' || !data) {
-                                return;
-                            }
+    <div class="shell pt-40 md:pt-56">
+        <div class="flex flex-col gap-6 sm:flex-row sm:items-end md:gap-10">
+            @if (!empty($movie['poster_path']))
+                <img src="https://image.tmdb.org/t/p/w342{{ $movie['poster_path'] }}" alt="{{ $movie['title'] }} poster"
+                     class="hidden w-40 shrink-0 rounded-2xl shadow-2xl shadow-black/60 ring-1 ring-white/10 sm:block md:w-56 lg:w-64">
+            @endif
 
-                            if (data.type === 'PLAYER_EVENT') {
-                                this.handlePlayerEvent(data.data);
-                            }
-                        });
-                    },
-                    
-                    handlePlayerEvent(eventData) {
-                        const { event, currentTime, duration, tmdbId } = eventData;
-                                                
-                        const shouldSave = event === 'pause' || 
-                                        event === 'ended' || 
-                                        event === 'seeked' || 
-                                        (event === 'timeupdate' && Date.now() - this.lastProgressUpdate > this.progressUpdateThrottle);
-                        
-                        if (shouldSave && duration > 0 && currentTime > 0) {
-                            this.saveWatchProgress(tmdbId, currentTime, duration);
-                            this.lastProgressUpdate = Date.now();
-                        }
-                    },
-                    
-                    async saveWatchProgress(tmdbId, watched, duration) {
-                        try {
-                            const response = await fetch('/watch-progress', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': this.csrfToken
-                                },
-                                body: JSON.stringify({
-                                    tmdb_id: tmdbId,
-                                    media_type: 'movie',
-                                    watched: watched,
-                                    duration: duration
-                                })
-                            });
+            <div class="min-w-0 max-w-3xl">
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-brand-200 ring-1 ring-white/15 backdrop-blur">
+                    <x-icon name="film" class="size-3.5" /> Movie
+                </span>
+                <h1 class="mt-4 text-balance text-3xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-4xl lg:text-6xl">{{ $movie['title'] }}</h1>
+                @if (!empty($movie['tagline']))
+                    <p class="mt-2 text-base italic text-gray-300 md:text-lg">“{{ $movie['tagline'] }}”</p>
+                @endif
 
-                        } catch (error) {
-                            console.error('Error saving watch progress:', error);
-                        }
-                    },
-                    
-                    async openModal() {
-                        this.isOpen = true;
-                        
-                        this.$nextTick(() => {
-                            this.initProgressTracking();
-                        });
-                        
-                        if (this.userId) {
-                            this.fetchWatchProgress();
-                        }
-                    },
-                    
-                    closeModal() {
-                        this.isOpen = false;
-                        this.resumeTimestamp = 0; // Reset for next time
-                    },
-                    
-                    getIframeUrl() {
-                        let url = `https://vidfast.pro/movie/${this.movieId}?theme=16A085`;
-                        if (this.resumeTimestamp > 0 && this.userId) {
-                            url += `&t=${this.resumeTimestamp}`;
-                        }
-                        return url;
-                    }
-                }">
-                    <button
-                        @click="openModal"
-                        class="btn gap-2 w-full md:w-auto bg-green-700 hover:bg-green-800 text-white md:px-6 md:py-2 rounded-box font-semibold"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-6">
-                            <path fill-rule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm14.024-.983a1.125 1.125 0 0 1 0 1.966l-5.603 3.113A1.125 1.125 0 0 1 9 15.113V8.887c0-.857.921-1.4 1.671-.983l5.603 3.113Z" clip-rule="evenodd" />
-                        </svg>
-                        Play Now
-                    </button>
-                
-                    <template x-if="isOpen">
-                        <div
-                            style="background-color: rgba(0, 0, 0, .5);"
-                            class="fixed top-0 left-0 w-full h-full flex items-center shadow-lg overflow-y-auto z-50"
-                        >
-                            <div class="container mx-auto lg:px-32 rounded-lg overflow-y-auto">
-                                <div class="bg-gray-900 rounded">
-                                    <div class="flex justify-end pr-4 pt-2">
-                                        <button
-                                            @click="closeModal()"
-                                            @keydown.escape.window="closeModal()"
-                                            class="text-3xl leading-none hover:text-gray-300">&times;
-                                        </button>
-                                    </div>
-                                    <div class="modal-body px-8 py-8">
-                                        <div class="responsive-container overflow-hidden relative pt-96">
-                                            <iframe 
-                                                class="responsive-iframe absolute top-0 left-0 w-full h-full" 
-                                                :src="getIframeUrl()" 
-                                                style="border:0;" 
-                                                allow="autoplay; encrypted-media" 
-                                                allowfullscreen>
-                                            </iframe>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-                
-                <div x-data="{ isOpen: false }">
-                    <button
-                        @click="isOpen = true"
-                        class="btn gap-2 w-full md:w-auto bg-white/10 hover:bg-white/20 text-white md:px-6 md:py-2 rounded-box"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
-                        </svg>
-                        Watch Trailer
-                    </button>
-                    
-                    <!-- Trailer Modal -->
-                    <template x-if="isOpen">
-                        <div
-                            style="background-color: rgba(0, 0, 0, .5);"
-                            class="fixed top-0 left-0 w-full h-full flex items-center shadow-lg overflow-y-auto z-50"
-                        >
-                            <div class="container mx-auto lg:px-32 rounded-lg overflow-y-auto">
-                                <div class="bg-gray-900 rounded">
-                                    <div class="flex justify-end pr-4 pt-2">
-                                        <button
-                                            @click="isOpen = false"
-                                            @keydown.escape.window="isOpen = false"
-                                            class="text-3xl leading-none hover:text-gray-300">&times;
-                                        </button>
-                                    </div>
-                                    <div class="modal-body px-8 py-8">
-                                        <div class="responsive-container overflow-hidden relative pt-96">
-                                            @if(isset($movie['videos']['results'][0]['key']))
-                                                <iframe class="responsive-iframe absolute top-0 left-0 w-full h-full" src="https://www.youtube.com/embed/{{ $movie['videos']['results'][0]['key'] }}" style="border:0;" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-                                            @else
-                                                <div class="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-gray-800">
-                                                    <p class="text-white text-xl">No trailer available</p>
-                                                </div>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-
-                <livewire:add-watchlist :tmdb-id="$movie['id']" />
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="mx-6 md:mx-auto max-w-xl md:max-w-3xl lg:max-w-7xl py-8 md:py-10">
-    <div class="md:flex-row items-center md:items-start gap-6">
-        <h3 class="text-white font-semibold text-center md:text-left">Storyline</h3>
-        <p class="text-gray-300 mt-4 text-sm md:text-base">
-            {{ $movie['overview'] }}
-        </p>
-        <div class="mt-8 md:mt-12">
-            <h4 class="text-white font-semibold text-center md:text-left">Top Cast</h4>
-            <div class="flex flex-wrap justify-center md:justify-start mt-4 gap-6">
-                @foreach($movie['credits']['cast'] as $cast)
-                    @if($loop->index < 5)
-                        <div class="flex items-center space-x-2">
-                            @php
-                                $avatar = $cast['profile_path']
-                                    ? 'https://image.tmdb.org/t/p/w500/' . $cast['profile_path']
-                                    : '/img/avatars/avatar_female.jpg';
-                            @endphp
-                            <img src="{{ $avatar }}"
-                            alt="{{ $cast['name'] }}"
-                            class="avatar rounded-full w-8 h-8 md:block md:w-12 md:h-12 object-cover" />
-                            <div>
-                                <div class="text-sm md:text-base">{{ $cast['name'] }}</div>
-                                <div class="text-xs md:text-sm text-gray-400">{{ $cast['character'] }}</div>
-                            </div>
-                        </div>
+                <div class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium text-gray-300">
+                    @if (!empty($movie['vote_average']))
+                        <span class="flex items-center gap-1 font-bold text-white"><x-icon name="star-solid" class="size-4 text-amber-400" />{{ number_format($movie['vote_average'], 1) }}</span>
                     @endif
+                    @if ($year) <span>{{ $year }}</span> @endif
+                    @if ($runtime) <span class="text-gray-500">•</span><span>{{ $runtime }}</span> @endif
+                </div>
+
+                @if (!empty($selectedMovieDetails['genres']))
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        @foreach ($selectedMovieDetails['genres'] as $genre)
+                            <span class="rounded-full bg-white/5 px-3 py-1 text-xs font-semibold text-gray-200 ring-1 ring-white/10">{{ $genre }}</span>
+                        @endforeach
+                    </div>
+                @endif
+
+                <div class="mt-6 grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:gap-3"
+                     x-data="{
+                        isOpen: false,
+                        trailerOpen: false,
+                        movieId: {{ $movie['id'] }},
+                        userId: '{{ auth()->id() }}',
+                        csrfToken: '{{ csrf_token() }}',
+                        lastProgressUpdate: 0,
+                        progressUpdateThrottle: 5000,
+                        resumeTimestamp: 0,
+                        listening: false,
+
+                        async fetchWatchProgress() {
+                            if (!this.userId) return;
+                            try {
+                                const response = await fetch('/watch-progress', {
+                                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': this.csrfToken, 'X-Requested-With': 'XMLHttpRequest' }
+                                });
+                                if (!response.ok) return;
+                                const result = await response.json();
+                                const progress = (result.data || []).find(p => p.tmdb_id == this.movieId && p.media_type === 'movie');
+                                if (progress && progress.watched > 30 && progress.watched < progress.duration * 0.9) {
+                                    this.resumeTimestamp = Math.floor(progress.watched);
+                                }
+                            } catch (error) {
+                                console.error('Error fetching watch progress:', error);
+                            }
+                        },
+
+                        initProgressTracking() {
+                            if (!this.userId || this.listening) return;
+                            this.listening = true;
+                            window.addEventListener('message', ({ origin, data }) => {
+                                if (origin !== 'https://vidfast.pro' || !data) return;
+                                if (data.type === 'PLAYER_EVENT') this.handlePlayerEvent(data.data);
+                            });
+                        },
+
+                        handlePlayerEvent({ event, currentTime, duration, tmdbId }) {
+                            const shouldSave = ['pause', 'ended', 'seeked'].includes(event)
+                                || (event === 'timeupdate' && Date.now() - this.lastProgressUpdate > this.progressUpdateThrottle);
+                            if (shouldSave && duration > 0 && currentTime > 0) {
+                                this.saveWatchProgress(tmdbId, currentTime, duration);
+                                this.lastProgressUpdate = Date.now();
+                            }
+                        },
+
+                        async saveWatchProgress(tmdbId, watched, duration) {
+                            try {
+                                await fetch('/watch-progress', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': this.csrfToken },
+                                    body: JSON.stringify({ tmdb_id: tmdbId, media_type: 'movie', watched, duration })
+                                });
+                            } catch (error) {
+                                console.error('Error saving watch progress:', error);
+                            }
+                        },
+
+                        async openModal() {
+                            if (this.userId) await this.fetchWatchProgress();
+                            this.initProgressTracking();
+                            this.isOpen = true;
+                        },
+
+                        closeModal() {
+                            this.isOpen = false;
+                            this.resumeTimestamp = 0;
+                        },
+
+                        getIframeUrl() {
+                            let url = `https://vidfast.pro/movie/${this.movieId}?theme=16A085`;
+                            if (this.resumeTimestamp > 0 && this.userId) url += `&t=${this.resumeTimestamp}`;
+                            return url;
+                        }
+                     }">
+                    <button type="button" @click="openModal()" class="btn-brand col-span-2 sm:col-span-1">
+                        <x-icon name="play-solid" class="size-5" /> Play
+                    </button>
+
+                    @if ($trailer)
+                        <button type="button" @click="trailerOpen = true" class="btn-glass">
+                            <x-icon name="trailer" class="size-5" /> Trailer
+                        </button>
+                    @endif
+
+                    <livewire:add-watchlist :tmdb-id="$movie['id']" />
+
+                    <x-video-modal show="isOpen" src="getIframeUrl()" close="closeModal()" label="Movie player" />
+                    @if ($trailer)
+                        <x-video-modal show="trailerOpen" src="'https://www.youtube.com/embed/{{ $trailer['key'] }}?autoplay=1'" close="trailerOpen = false" label="Trailer" />
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{{-- ===================================================================== ABOUT --}}
+<div class="shell mt-12 grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-14">
+    <div class="min-w-0 space-y-12">
+        <section>
+            <h2 class="section-title">Storyline</h2>
+            <p class="mt-4 max-w-3xl text-base leading-relaxed text-gray-300">{{ $movie['overview'] ?: 'No overview available.' }}</p>
+        </section>
+
+        @if ($cast->isNotEmpty())
+            <section>
+                <h2 class="section-title">Top cast</h2>
+                <ul class="no-scrollbar -mx-4 mt-5 flex snap-x gap-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0">
+                    @foreach ($cast as $person)
+                        <li class="w-24 shrink-0 snap-start text-center md:w-28">
+                            @if (!empty($person['profile_path']))
+                                <img src="https://image.tmdb.org/t/p/w185{{ $person['profile_path'] }}" alt="{{ $person['name'] }}" loading="lazy"
+                                     class="mx-auto size-20 rounded-full object-cover ring-2 ring-white/10 md:size-24">
+                            @else
+                                <span class="mx-auto grid size-20 place-items-center rounded-full bg-ink-800 text-gray-600 ring-2 ring-white/10 md:size-24">
+                                    <x-icon name="user" class="size-8" />
+                                </span>
+                            @endif
+                            <p class="mt-2 line-clamp-2 text-sm font-semibold leading-tight text-white">{{ $person['name'] }}</p>
+                            <p class="mt-0.5 line-clamp-2 text-xs text-gray-400">{{ $person['character'] }}</p>
+                        </li>
+                    @endforeach
+                </ul>
+            </section>
+        @endif
+    </div>
+
+    @if ($facts)
+        <aside class="h-fit rounded-2xl bg-ink-900/70 p-6 ring-1 ring-white/5">
+            <h2 class="text-xs font-bold uppercase tracking-[0.18em] text-gray-500">Details</h2>
+            <dl class="mt-4 space-y-4">
+                @foreach ($facts as $label => $value)
+                    <div>
+                        <dt class="text-xs text-gray-500">{{ $label }}</dt>
+                        <dd class="mt-0.5 text-sm font-semibold text-gray-100">{{ $value }}</dd>
+                    </div>
                 @endforeach
-            </div>
-        </div>
-    </div>
+            </dl>
+        </aside>
+    @endif
 </div>
 
-<div x-data="{ 
-    activeTab: 'similar',
-    similarMovies: [],
-    recommendedMovies: [],
-    movieImages: [],
-    genres: {},
-    loading: false,
-    
-    async loadSimilarMovies() {
-        if (this.similarMovies.length > 0) return;
-        this.loading = true;
-        try {
-            const response = await fetch('/movies/{{ $movie['id'] }}/similar');
-            const data = await response.json();
-            this.similarMovies = data.similarMovie;
-            this.genres = data.genres;
-        } catch (error) {
-            console.error('Error loading similar movies:', error);
-        } finally {
-            this.loading = false;
+{{-- ===================================================================== MORE --}}
+<div class="shell mt-16"
+     x-data="{
+        tab: 'more',
+        images: [],
+        imagesLoaded: false,
+        lightbox: null,
+        async showImages() {
+            this.tab = 'images';
+            if (this.imagesLoaded) return;
+            try {
+                const res = await fetch('/movies/{{ $movie['id'] }}/images');
+                const data = await res.json();
+                this.images = (data.backdrops || []).slice(0, 18);
+            } catch (e) { console.error(e); }
+            this.imagesLoaded = true;
         }
-    },
-    
-    async loadRecommendedMovies() {
-        if (this.recommendedMovies.length > 0) return;
-        this.loading = true;
-        try {
-            const response = await fetch('/movies/{{ $movie['id'] }}/recommended');
-            const data = await response.json();
-            this.recommendedMovies = data.recommendedMovie;
-            this.genres = data.genres;
-        } catch (error) {
-            console.error('Error loading recommended movies:', error);
-        } finally {
-            this.loading = false;
-        }
-    },
-    
-    async loadMovieImages() {
-        if (this.movieImages.length > 0) return;
-        this.loading = true;
-        try {
-            const response = await fetch('/movies/{{ $movie['id'] }}/images');
-            const data = await response.json();
-            this.movieImages = data.backdrops || [];
-        } catch (error) {
-            console.error('Error loading movie images:', error);
-        } finally {
-            this.loading = false;
-        }
-    },
-    
-    async switchTab(tab) {
-        this.activeTab = tab;
-        if (tab === 'similar') {
-            await this.loadSimilarMovies();
-            await this.loadRecommendedMovies();
-        } else if (tab === 'images') {
-            await this.loadMovieImages();
-        }
-    },
-    
-    init() {
-        // Load similar and recommended movies immediately since 'similar' is the default tab
-        this.loadSimilarMovies();
-        this.loadRecommendedMovies();
-    }
-}">
-    <!-- Tab navigation -->
-    <div class="max-w-xl mx-6 md:max-w-3xl lg:max-w-7xl md:mx-auto py-5">
-        <div role="tablist" class="flex space-x-6">
-            <a role="tab" 
-                @click.prevent="switchTab('similar')" 
-                :class="{ 'border-b-2 border-teal-500 pb-2': activeTab === 'similar', 'text-gray-400': activeTab !== 'similar' }"
-                class="cursor-pointer text-sm font-semibold transition duration-150 text-white">
-                Recommendations
-            </a>
-            <a role="tab" 
-                @click.prevent="switchTab('images')" 
-                :class="{ 'border-b-2 border-teal-500 pb-2': activeTab === 'images', 'text-gray-400': activeTab !== 'images' }"
-                class="cursor-pointer text-sm font-semibold transition duration-150 text-white">
-                Images
-            </a>
-        </div>
+     }">
+    <div class="mb-8 flex gap-1 border-b border-white/10" role="tablist">
+        <button type="button" role="tab" @click="tab = 'more'" :aria-selected="tab === 'more'"
+                class="-mb-px border-b-2 px-4 py-3 text-sm font-semibold transition"
+                :class="tab === 'more' ? 'border-brand-400 text-white' : 'border-transparent text-gray-400 hover:text-white'">More like this</button>
+        <button type="button" role="tab" @click="showImages()" :aria-selected="tab === 'images'"
+                class="-mb-px border-b-2 px-4 py-3 text-sm font-semibold transition"
+                :class="tab === 'images' ? 'border-brand-400 text-white' : 'border-transparent text-gray-400 hover:text-white'">Images</button>
     </div>
 
-    <div class="mx-6 md:max-w-3xl lg:max-w-7xl md:mx-auto py-5">
-        <div x-show="activeTab === 'similar'" class="tab-panel">
-            <div x-show="loading" class="text-center py-8">
-                <div class="text-white">Loading Recommendations <span class="loading loading-spinner loading-lg text-success"></span></div>
-            </div>
-            
-            <div x-show="!loading">
-                <h2 class="text-2xl font-bold text-white">More Like This</h2>
-                <div class="container mx-auto max-w-7xl">
-                    <div class="similar-movies" x-data="{ 
-                        currentIndex: 0,
-                        get movies() { return similarMovies; },
-                        get filteredMovies() { return this.movies.filter(movie => movie.backdrop_path); },
-                        getChunkSize() {
-                            if (window.innerWidth < 640) return 1;
-                            if (window.innerWidth < 835) return 3;
-                            return 5;
-                        },
-                        get chunks() {
-                            const chunkSize = this.getChunkSize();
-                            const chunks = [];
-                            for (let i = 0; i < this.filteredMovies.length; i += chunkSize) {
-                                chunks.push(this.filteredMovies.slice(i, i + chunkSize));
-                            }
-                            return chunks;
-                        },
-                        formatVoteAverage(vote) {
-                            return (vote * 10).toFixed(0) + '%';
-                        },
-                        init() {
-                            window.addEventListener('resize', () => {
-                                if (this.currentIndex >= this.chunks.length) {
-                                    this.currentIndex = Math.max(0, this.chunks.length - 1);
-                                }
-                            });
-                        },
-                        next() {
-                            if (this.currentIndex < this.chunks.length - 1) {
-                                this.currentIndex++;
-                            }
-                        },
-                        prev() {
-                            if (this.currentIndex > 0) {
-                                this.currentIndex--;
-                            }
-                        }
-                    }">
-                        <div class="relative">
-                            <button 
-                                @click="prev" 
-                                x-show="currentIndex > 0"
-                                class="absolute left-0 top-1/2 z-10 transform -translate-y-1/2 bg-gray-900/80 text-white p-2 rounded-full hover:bg-gray-800"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                                </svg>
-                            </button>
-                            
-                            <div class="overflow-hidden px-4">
-                                <div
-                                    class="flex transition-transform duration-300 ease-in-out"
-                                    :style="`transform: translateX(-${currentIndex * 100}%)`"
-                                >
-                                    <template x-for="(chunk, index) in chunks" :key="index">
-                                        <div class="w-full flex-shrink-0">
-                                            <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                                                <template x-for="(movie, movieIndex) in chunk" :key="movie.id">
-                                                    <div class="mt-4 md:mt-8">
-                                                        <div class="flex flex-col">
-                                                            <a :href="`/movies/${movie.id}`">
-                                                                <img :src="`https://image.tmdb.org/t/p/w500/${movie.backdrop_path}`"
-                                                                    :alt="movie.title"
-                                                                    class="w-full block hover:opacity-75 transition ease-in-out duration-150 rounded-lg shadow">
-                                                            </a>
-                                                            <div class="text-white p-2 rounded-b-lg">
-                                                                <a :href="`/movies/${movie.id}`" class="text-base md:text-lg mt-1 hover:text-gray-300 line-clamp-1" x-text="movie.title"></a>
-                                                                <div class="flex items-center text-xs md:text-sm">
-                                                                    <span>
-                                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-yellow-400">
-                                                                            <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" />
-                                                                        </svg>
-                                                                    </span>
-                                                                    <span class="ml-1 font-semibold" x-text="formatVoteAverage(movie.vote_average)"></span>
-                                                                    <span class="mx-1">|</span>
-                                                                    <div class="text-xs mt-1 font-medium text-gray-500 line-clamp-1">
-                                                                        <template x-for="(genreId, genreIndex) in movie.genre_ids" :key="genreId">
-                                                                            <span>
-                                                                                <span x-text="genres[genreId]"></span>
-                                                                                <template x-if="genreIndex < movie.genre_ids.length - 1">
-                                                                                    <span>, </span>
-                                                                                </template>
-                                                                            </span>
-                                                                        </template>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </template>
-                                            </div>
-                                        </div>
-                                    </template>
-                                </div>
-                            </div>
-                                                            
-                            <button 
-                                @click="next" 
-                                x-show="currentIndex < chunks.length - 1"
-                                class="absolute right-0 top-1/2 transform -translate-y-1/2 bg-gray-900/80 text-white p-2 rounded-full hover:bg-gray-800"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
+    <div x-show="tab === 'more'" class="space-y-12">
+        <x-poster-row title="More Like This" url="/movies/{{ $movie['id'] }}/similar" data-key="similarMovie" variant="backdrop" />
+        <x-poster-row title="You Might Also Like" url="/movies/{{ $movie['id'] }}/recommended" data-key="recommendedMovie" variant="backdrop" />
+    </div>
 
-                    <h2 class="text-2xl font-bold mt-8 text-white">You Might Also Like</h2>
-                    <div class="recommended-movies" x-data="{ 
-                        currentIndex: 0,
-                        get movies() { return recommendedMovies; },
-                        get filteredMovies() { return this.movies.filter(movie => movie.backdrop_path); },
-                        getChunkSize() {
-                            if (window.innerWidth < 640) return 1;
-                            if (window.innerWidth < 835) return 3;
-                            return 5;
-                        },
-                        get chunks() {
-                            const chunkSize = this.getChunkSize();
-                            const chunks = [];
-                            for (let i = 0; i < this.filteredMovies.length; i += chunkSize) {
-                                chunks.push(this.filteredMovies.slice(i, i + chunkSize));
-                            }
-                            return chunks;
-                        },
-                        formatVoteAverage(vote) {
-                            return (vote * 10).toFixed(0) + '%';
-                        },
-                        init() {
-                            window.addEventListener('resize', () => {
-                                if (this.currentIndex >= this.chunks.length) {
-                                    this.currentIndex = Math.max(0, this.chunks.length - 1);
-                                }
-                            });
-                        },
-                        next() {
-                            if (this.currentIndex < this.chunks.length - 1) {
-                                this.currentIndex++;
-                            }
-                        },
-                        prev() {
-                            if (this.currentIndex > 0) {
-                                this.currentIndex--;
-                            }
-                        }
-                    }">
-                        <div class="relative">
-                            <button 
-                                @click="prev" 
-                                x-show="currentIndex > 0"
-                                class="absolute left-0 top-1/2 z-10 transform -translate-y-1/2 bg-gray-900/80 text-white p-2 rounded-full hover:bg-gray-800"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                                </svg>
-                            </button>
-                            
-                            <div class="overflow-hidden px-4">
-                                <div
-                                    class="flex transition-transform duration-300 ease-in-out"
-                                    :style="`transform: translateX(-${currentIndex * 100}%)`"
-                                >
-                                    <template x-for="(chunk, index) in chunks" :key="index">
-                                        <div class="w-full flex-shrink-0">
-                                            <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                                                <template x-for="(movie, movieIndex) in chunk" :key="movie.id">
-                                                    <div class="mt-4 md:mt-8">
-                                                        <div class="flex flex-col">
-                                                            <a :href="`/movies/${movie.id}`">
-                                                                <img :src="`https://image.tmdb.org/t/p/w500/${movie.backdrop_path}`"
-                                                                    :alt="movie.title"
-                                                                    class="w-full block hover:opacity-75 transition ease-in-out duration-150 rounded-lg shadow">
-                                                            </a>
-                                                            <div class="text-white p-2 rounded-b-lg">
-                                                                <a :href="`/movies/${movie.id}`" class="text-base md:text-lg mt-1 hover:text-gray-300 line-clamp-1" x-text="movie.title"></a>
-                                                                <div class="flex items-center text-xs md:text-sm">
-                                                                    <span>
-                                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-yellow-400">
-                                                                            <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" />
-                                                                        </svg>
-                                                                    </span>
-                                                                    <span class="ml-1 font-semibold" x-text="formatVoteAverage(movie.vote_average)"></span>
-                                                                    <span class="mx-1">|</span>
-                                                                    <div class="text-xs mt-1 font-medium text-gray-500 line-clamp-1">
-                                                                        <template x-for="(genreId, genreIndex) in movie.genre_ids" :key="genreId">
-                                                                            <span>
-                                                                                <span x-text="genres[genreId]"></span>
-                                                                                <template x-if="genreIndex < movie.genre_ids.length - 1">
-                                                                                    <span>, </span>
-                                                                                </template>
-                                                                            </span>
-                                                                        </template>
-                                                                    </div>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </template>
-                                            </div>
-                                        </div>
-                                    </template>
-                                </div>
-                            </div>
-                                                            
-                            <button 
-                                @click="next" 
-                                x-show="currentIndex < chunks.length - 1"
-                                class="absolute right-0 top-1/2 transform -translate-y-1/2 bg-gray-900/80 text-white p-2 rounded-full hover:bg-gray-800"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    <div x-show="tab === 'images'" x-cloak>
+        <div x-show="!imagesLoaded" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            @for ($i = 0; $i < 6; $i++) <div class="aspect-video animate-pulse rounded-xl bg-ink-800"></div> @endfor
+        </div>
+        <p x-show="imagesLoaded && !images.length" class="py-10 text-center text-sm text-gray-500">No images available.</p>
+        <div x-show="imagesLoaded" class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <template x-for="img in images" :key="img.file_path">
+                <button type="button" @click="lightbox = img.file_path" class="group overflow-hidden rounded-xl ring-1 ring-white/5">
+                    <img :src="`https://image.tmdb.org/t/p/w780${img.file_path}`" alt="Still from {{ $movie['title'] }}" loading="lazy"
+                         class="aspect-video w-full object-cover transition duration-500 group-hover:scale-105">
+                </button>
+            </template>
         </div>
 
-        <!-- Images Tab with Modal -->
-        <div x-show="activeTab === 'images'" class="tab-panel" x-data="{ isOpen: false, image: '' }">
-            <div x-show="loading" class="text-center py-8">
-                <div class="text-white">Loading Images <span class="loading loading-spinner loading-lg text-success"></span></div>
+        <template x-teleport="body">
+            <div x-show="lightbox" x-cloak x-transition.opacity @click.self="lightbox = null" @keydown.escape.window="lightbox = null"
+                 class="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm">
+                <button type="button" @click="lightbox = null" class="absolute right-4 top-4 grid size-10 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20" aria-label="Close image">
+                    <x-icon name="x" class="size-5" />
+                </button>
+                <img :src="lightbox ? `https://image.tmdb.org/t/p/w1280${lightbox}` : null" alt="" class="max-h-[85svh] w-auto max-w-full rounded-xl shadow-2xl">
             </div>
-            
-            <div x-show="!loading" class="movie-images">
-                <div class="container mx-auto max-w-7xl">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-                        <template x-for="(image, index) in movieImages.slice(0, 15)" :key="image.file_path">
-                            <div class="mt-8">
-                                <a
-                                    @click.prevent="
-                                        isOpen = true;
-                                        image = `https://image.tmdb.org/t/p/original/${image.file_path}`;
-                                    "
-                                    href="#"
-                                >
-                                    <img :src="`https://image.tmdb.org/t/p/w500/${image.file_path}`" alt="Movie Image" class="hover:opacity-75 transition ease-in-out duration-150">
-                                </a>
-                            </div>
-                        </template>
-                    </div>
-
-                    <div
-                        style="background-color: rgba(0, 0, 0, .5);"
-                        class="fixed top-5 left-0 w-full py-96 h-80 flex items-center shadow-lg overflow-y-auto z-50"
-                        x-show="isOpen"
-                    >
-                        <div class="container mx-auto lg:px-32 rounded-lg overflow-y-auto">
-                            <div class="bg-gray-900 rounded">
-                                <div class="flex justify-end pr-4 pt-2">
-                                    <button
-                                        @click="isOpen = false"
-                                        @keydown.escape.window="isOpen = false"
-                                        class="text-3xl leading-none hover:text-gray-300">&times;
-                                    </button>
-                                </div>
-                                <div class="modal-body px-8 py-8">
-                                    <img :src="image" alt="poster">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        </template>
     </div>
 </div>
-
 @endsection

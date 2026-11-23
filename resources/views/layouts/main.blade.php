@@ -1,30 +1,19 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-theme="envydeo">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Envydeo</title>
-
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
-    @vite('resources/css/app.css')
-    @livewireStyles
+    @include('layouts.partials.head')
 </head>
-<body class="font-sans bg-gray-900 text-white">
+<body class="flex flex-col">
+    <a href="#main" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-brand-600 focus:px-4 focus:py-2">Skip to content</a>
+
     @include('layouts.nav')
-    @yield('content')
-    @livewireScripts
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            if (window.Alpine) {
-                window.dispatchEvent(new CustomEvent('alpine:initialized'));
-            } else {
-                import('https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js').then(module => {
-                    window.Alpine = module.default;
-                    Alpine.start();
-                });
-            }
-        });
-    </script>
+
+    <main id="main" class="flex-1">
+        @yield('content')
+    </main>
+
     @include('layouts.footer')
+
+    @livewireScripts
 </body>
 </html>

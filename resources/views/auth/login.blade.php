@@ -1,81 +1,49 @@
-<x-guest-layout> 
-    <div class="w-full sm:max-w-md mt-6 px-6 py-6 bg-gray-800 overflow-hidden sm:rounded-lg">
-        <div class="text-center mb-6">
-            <h1 class="text-2xl font-bold text-white">Welcome Back</h1>
-            <p class="text-gray-400 mt-2">Sign in to your account to continue</p>
+<x-guest-layout>
+    <x-slot name="title">Sign in</x-slot>
+
+    <div class="text-center">
+        <x-logo :wordmark="false" size="lg" class="justify-center" />
+        <h1 class="mt-4 text-2xl font-extrabold tracking-tight text-white">Welcome back</h1>
+        <p class="mt-1.5 text-sm text-gray-400">Sign in to sync your watchlist and progress.</p>
+    </div>
+
+    <x-auth-session-status class="mt-6 rounded-xl bg-brand-600/15 px-4 py-3 text-sm text-brand-200 ring-1 ring-brand-500/30" :status="session('status')" />
+    @if (session('error'))
+        <p class="mt-6 rounded-xl bg-red-500/10 px-4 py-3 text-sm text-red-300 ring-1 ring-red-500/30">{{ session('error') }}</p>
+    @endif
+
+    <form method="POST" action="{{ route('login') }}" class="mt-6 space-y-5">
+        @csrf
+
+        <div>
+            <x-input-label for="email" :value="__('Email')" />
+            <x-text-input id="email" type="email" name="email" :value="old('email')" placeholder="you@example.com" required autofocus autocomplete="username" />
+            <x-input-error :messages="$errors->get('email')" class="mt-2" />
         </div>
 
-        <x-auth-session-status class="mb-4" :status="session('status')" />
-
-        <form method="POST" action="{{ route('login') }}">
-            @csrf
-
-            <!-- Email Address -->
-            <div>
-                <x-input-label for="email" :value="__('Email')" class="text-gray-300" />
-                <x-text-input id="email" class="block mt-1 p-3 w-full bg-gray-700 border-gray-600 text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500" placeholder="Enter your email" type="email" name="email" :value="old('email')" required autofocus autocomplete="username" />
-                <x-input-error :messages="$errors->get('email')" class="mt-2" />
-            </div>
-
-            <!-- Password -->
-            <div class="mt-4">
-                <x-input-label for="password" :value="__('Password')" class="text-gray-300" />
-                <x-text-input id="password" class="block mt-1 p-3 w-full bg-gray-700 border-gray-600 text-white rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                                type="password"
-                                name="password"
-                                placeholder="Enter your password"
-                                required autocomplete="current-password" />
-                <x-input-error :messages="$errors->get('password')" class="mt-2" />
-            </div>
-
-            <div class="block mt-4">
-                <label for="remember_me" class="inline-flex items-center">
-                    <input id="remember_me" type="checkbox" class="rounded bg-gray-700 border-gray-600 text-indigo-600 shadow-sm focus:ring-indigo-500" name="remember">
-                    <span class="ms-2 text-sm text-gray-400">{{ __('Remember me') }}</span>
-                </label>
-            </div>
-
-            <div class="mt-6">
-                <x-primary-button class="w-full justify-center p-3 text-lg font-medium">
-                    {{ __('Sign In') }}
-                </x-primary-button>
-            </div>
-
-            <div class="mt-6 relative">
-                <div class="absolute inset-0 flex items-center">
-                    <div class="w-full border-t border-gray-600"></div>
-                </div>
-                <div class="relative flex justify-center text-sm">
-                    <span class="px-2 bg-gray-800 text-gray-400">Or continue with</span>
-                </div>
-            </div>
-
-            <!-- Google Sign In -->
-            <div class="mt-6">
-                <a href="{{ route('login.provider', 'google') }}" class="flex items-center justify-center px-4 py-3 bg-white border border-gray-300 rounded-lg font-medium text-gray-700 hover:bg-gray-50 active:text-white active:bg-green-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 w-full">
-                    <svg class="w-5 h-5 mr-2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <g transform="matrix(1, 0, 0, 1, 27.009001, -39.238998)">
-                            <path fill="#4285F4" d="M -3.264 51.509 C -3.264 50.719 -3.334 49.969 -3.454 49.239 L -14.754 49.239 L -14.754 53.749 L -8.284 53.749 C -8.574 55.229 -9.424 56.479 -10.684 57.329 L -10.684 60.329 L -6.824 60.329 C -4.564 58.239 -3.264 55.159 -3.264 51.509 Z"/>
-                            <path fill="#34A853" d="M -14.754 63.239 C -11.514 63.239 -8.804 62.159 -6.824 60.329 L -10.684 57.329 C -11.764 58.049 -13.134 58.489 -14.754 58.489 C -17.884 58.489 -20.534 56.379 -21.484 53.529 L -25.464 53.529 L -25.464 56.619 C -23.494 60.539 -19.444 63.239 -14.754 63.239 Z"/>
-                            <path fill="#FBBC05" d="M -21.484 53.529 C -21.734 52.809 -21.864 52.039 -21.864 51.239 C -21.864 50.439 -21.724 49.669 -21.484 48.949 L -21.484 45.859 L -25.464 45.859 C -26.284 47.479 -26.754 49.299 -26.754 51.239 C -26.754 53.179 -26.284 54.999 -25.464 56.619 L -21.484 53.529 Z"/>
-                            <path fill="#EA4335" d="M -14.754 43.989 C -12.984 43.989 -11.404 44.599 -10.154 45.789 L -6.734 42.369 C -8.804 40.429 -11.514 39.239 -14.754 39.239 C -19.444 39.239 -23.494 41.939 -25.464 45.859 L -21.484 48.949 C -20.534 46.099 -17.884 43.989 -14.754 43.989 Z"/>
-                        </g>
-                    </svg>
-                    {{ __('Sign in with Google') }}
-                </a>
-            </div>
-
-            <div class="flex items-center justify-between mt-6">
+        <div>
+            <div class="mb-1.5 flex items-center justify-between">
+                <x-input-label for="password" :value="__('Password')" class="!mb-0" />
                 @if (Route::has('password.request'))
-                    <a class="text-sm text-indigo-400 hover:text-indigo-300 underline rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" href="{{ route('password.request') }}">
-                        {{ __('Forgot your password?') }}
-                    </a>
+                    <a class="text-xs font-semibold text-brand-300 hover:text-brand-200" href="{{ route('password.request') }}">Forgot password?</a>
                 @endif
-                
-                <a href="{{ route('register') }}" class="text-sm text-indigo-400 hover:text-indigo-300 underline rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                    {{ __('Create an account') }}
-                </a>
             </div>
-        </form>
-    </div>
+            <x-text-input id="password" type="password" name="password" placeholder="••••••••" required autocomplete="current-password" />
+            <x-input-error :messages="$errors->get('password')" class="mt-2" />
+        </div>
+
+        <label for="remember_me" class="flex items-center gap-2.5 text-sm text-gray-300">
+            <input id="remember_me" type="checkbox" name="remember" class="checkbox checkbox-sm checkbox-primary">
+            Remember me
+        </label>
+
+        <x-primary-button class="w-full">Sign in</x-primary-button>
+    </form>
+
+    @include('auth.partials.google-button')
+
+    <p class="mt-8 text-center text-sm text-gray-400">
+        New to Envydeo?
+        <a href="{{ route('register') }}" class="font-semibold text-brand-300 hover:text-brand-200">Create an account</a>
+    </p>
 </x-guest-layout>

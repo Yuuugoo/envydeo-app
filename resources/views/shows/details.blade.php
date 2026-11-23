@@ -1,523 +1,251 @@
 @extends('layouts.main')
 
+@section('title', $tvShow['name'])
+
+@php
+    $firstYear = !empty($tvShow['first_air_date']) ? substr($tvShow['first_air_date'], 0, 4) : null;
+    $lastYear = !empty($tvShow['last_air_date']) ? substr($tvShow['last_air_date'], 0, 4) : null;
+    $years = $firstYear ? ($lastYear && $lastYear !== $firstYear ? "{$firstYear}–{$lastYear}" : $firstYear) : null;
+    $seasonCount = $tvShow['number_of_seasons'] ?? 0;
+    $videos = collect($tvShow['videos']['results'] ?? [])->where('site', 'YouTube');
+    $trailer = $videos->firstWhere('type', 'Trailer') ?? $videos->first();
+    $cast = collect($tvShow['credits']['cast'] ?? [])->take(12);
+    $backdrops = array_slice($tvShow['images']['backdrops'] ?? [], 0, 18);
+    $seasonNumbers = array_keys($episodes);
+    $facts = array_filter([
+        'Status' => $tvShow['status'] ?? null,
+        'Network' => collect($tvShow['networks'] ?? [])->pluck('name')->take(2)->implode(', ') ?: null,
+        'Created by' => collect($tvShow['created_by'] ?? [])->pluck('name')->take(2)->implode(', ') ?: null,
+        'First aired' => !empty($tvShow['first_air_date']) ? \Carbon\Carbon::parse($tvShow['first_air_date'])->format('M j, Y') : null,
+        'Episodes' => !empty($tvShow['number_of_episodes']) ? number_format($tvShow['number_of_episodes']) : null,
+        'Original language' => !empty($tvShow['original_language']) ? strtoupper($tvShow['original_language']) : null,
+    ]);
+@endphp
+
 @section('content')
-<div class="tv-info border-b border-gray-800">
-    <div class="relative lg:-mt-10 lg:h-screen lg:max-h-[38rem] h-full">
-        <div class="w-full pb-48 md:pb-0 lg:pb-0 md:h-full relative">
-            <img src="{{ 'https://image.tmdb.org/t/p/original/' . $tvShow['backdrop_path'] }}"
-                alt="{{ $tvShow['name'] }}"
-                class="w-full h-full object-cover object-center">
+<div x-data="{
+        tab: 'episodes',
+        season: {{ $seasonNumbers[0] ?? 1 }},
+        episodes: @js($episodes),
+        playing: null,
+        trailerOpen: false,
+        lightbox: null,
+        tvId: {{ $tvShow['id'] }},
+        play(seasonNumber, episodeNumber) {
+            this.playing = `https://vidfast.pro/tv/${this.tvId}/${seasonNumber}/${episodeNumber}?nextButton=true&autoNext=true&theme=16A085`;
+        },
+        airDate(date) {
+            return date ? new Date(date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'TBA';
+        }
+     }">
+
+{{-- ===================================================================== HERO --}}
+<section class="relative isolate overflow-hidden">
+    @if (!empty($tvShow['backdrop_path']))
+        <img src="https://image.tmdb.org/t/p/w1280{{ $tvShow['backdrop_path'] }}" alt="" fetchpriority="high"
+             class="absolute inset-x-0 top-0 -z-10 h-[34rem] w-full object-cover object-[center_20%] md:h-[44rem]">
+    @endif
+    <div class="absolute inset-x-0 top-0 -z-10 h-[34rem] bg-gradient-to-t from-ink-950 via-ink-950/70 to-ink-950/20 md:h-[44rem]"></div>
+    <div class="absolute inset-x-0 top-0 -z-10 hidden h-[44rem] bg-gradient-to-r from-ink-950/90 via-ink-950/30 to-transparent md:block"></div>
+
+    <div class="shell pt-40 md:pt-56">
+        <div class="flex flex-col gap-6 sm:flex-row sm:items-end md:gap-10">
+            @if (!empty($tvShow['poster_path']))
+                <img src="https://image.tmdb.org/t/p/w342{{ $tvShow['poster_path'] }}" alt="{{ $tvShow['name'] }} poster"
+                     class="hidden w-40 shrink-0 rounded-2xl shadow-2xl shadow-black/60 ring-1 ring-white/10 sm:block md:w-56 lg:w-64">
+            @endif
+
+            <div class="min-w-0 max-w-3xl">
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-brand-200 ring-1 ring-white/15 backdrop-blur">
+                    <x-icon name="tv" class="size-3.5" /> TV Series
+                </span>
+                <h1 class="mt-4 text-balance text-3xl font-extrabold leading-[1.05] tracking-tight text-white sm:text-4xl lg:text-6xl">{{ $tvShow['name'] }}</h1>
+                @if (!empty($tvShow['tagline']))
+                    <p class="mt-2 text-base italic text-gray-300 md:text-lg">“{{ $tvShow['tagline'] }}”</p>
+                @endif
+
+                <div class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium text-gray-300">
+                    @if (!empty($tvShow['vote_average']))
+                        <span class="flex items-center gap-1 font-bold text-white"><x-icon name="star-solid" class="size-4 text-amber-400" />{{ number_format($tvShow['vote_average'], 1) }}</span>
+                    @endif
+                    @if ($years) <span>{{ $years }}</span> @endif
+                    @if ($seasonCount) <span class="text-gray-500">•</span><span>{{ $seasonCount }} {{ \Illuminate\Support\Str::plural('Season', $seasonCount) }}</span> @endif
+                </div>
+
+                @if (!empty($selectedTVDetails['genres']))
+                    <div class="mt-4 flex flex-wrap gap-2">
+                        @foreach ($selectedTVDetails['genres'] as $genre)
+                            <span class="rounded-full bg-white/5 px-3 py-1 text-xs font-semibold text-gray-200 ring-1 ring-white/10">{{ $genre }}</span>
+                        @endforeach
+                    </div>
+                @endif
+
+                <div class="mt-6 grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:gap-3">
+                    @if (!empty($seasonNumbers))
+                        <button type="button" @click="play({{ $seasonNumbers[0] }}, 1)" class="btn-brand col-span-2 sm:col-span-1">
+                            <x-icon name="play-solid" class="size-5" /> Play S{{ $seasonNumbers[0] }} E1
+                        </button>
+                    @endif
+                    @if ($trailer)
+                        <button type="button" @click="trailerOpen = true" class="btn-glass">
+                            <x-icon name="trailer" class="size-5" /> Trailer
+                        </button>
+                    @endif
+                    <a href="#episodes" @click="tab = 'episodes'" class="btn-glass">
+                        <x-icon name="tv" class="size-5" /> Episodes
+                    </a>
+                </div>
+            </div>
         </div>
-        <div class="absolute inset-0 bg-gradient-to-t from-gray-900 via-transparent to-transparent"></div>
-        
-        <!-- SHOWS info and buttons -->
-        <div class="absolute max-w-xl bottom-0 left-6 mt-64 md:mt-72 md:bottom-16 md:max-w-2xl lg:mt-0 lg:bottom-8 lg:left-28 text-white space-y-4 z-10">
-            <span class="bg-gray-900 px-3 py-1 rounded-full text-xs font-semibold">{{ $selectedTVDetails['media_type']}}</span>
-            <h2 class="text-xl mt-3 md:text-4xl font-bold mb-2 md:mb-4 hover:text-green-600">{{ $tvShow['name'] }}</h2>
-            <p class="text-xs md:text-sm text-gray-300">
-                {{ $tvShow['number_of_seasons'] }} Season •
-                {{ \Carbon\Carbon::parse($tvShow['last_air_date'])->format('Y') }} •
-                {{ implode(' • ', $selectedTVDetails['genres']) }}
-            </p>
-            
-            <div class="flex flex-col md:flex-row gap-4 mt-4">
-                
-                <!-- Watch Trailer Button -->
-                <div x-data="{ isOpen: false }">
-                    <button
-                        @click="isOpen = true"
-                        class="btn gap-2 w-full md:w-auto bg-white/10 hover:bg-white/20 text-white md:px-6 md:py-2 rounded-box"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.91 11.672a.375.375 0 0 1 0 .656l-5.603 3.113a.375.375 0 0 1-.557-.328V8.887c0-.286.307-.466.557-.327l5.603 3.112Z" />
-                        </svg>
-                        Watch Latest Trailer
+    </div>
+</section>
+
+<x-video-modal show="playing" src="playing" close="playing = null" label="Episode player" />
+@if ($trailer)
+    <x-video-modal show="trailerOpen" src="'https://www.youtube.com/embed/{{ $trailer['key'] }}?autoplay=1'" close="trailerOpen = false" label="Trailer" />
+@endif
+
+{{-- ===================================================================== ABOUT --}}
+<div class="shell mt-12 grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-14">
+    <div class="min-w-0 space-y-12">
+        <section>
+            <h2 class="section-title">Storyline</h2>
+            <p class="mt-4 max-w-3xl text-base leading-relaxed text-gray-300">{{ $tvShow['overview'] ?: 'No overview available.' }}</p>
+        </section>
+
+        @if ($cast->isNotEmpty())
+            <section>
+                <h2 class="section-title">Top cast</h2>
+                <ul class="no-scrollbar -mx-4 mt-5 flex snap-x gap-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0">
+                    @foreach ($cast as $person)
+                        <li class="w-24 shrink-0 snap-start text-center md:w-28">
+                            @if (!empty($person['profile_path']))
+                                <img src="https://image.tmdb.org/t/p/w185{{ $person['profile_path'] }}" alt="{{ $person['name'] }}" loading="lazy"
+                                     class="mx-auto size-20 rounded-full object-cover ring-2 ring-white/10 md:size-24">
+                            @else
+                                <span class="mx-auto grid size-20 place-items-center rounded-full bg-ink-800 text-gray-600 ring-2 ring-white/10 md:size-24">
+                                    <x-icon name="user" class="size-8" />
+                                </span>
+                            @endif
+                            <p class="mt-2 line-clamp-2 text-sm font-semibold leading-tight text-white">{{ $person['name'] }}</p>
+                            <p class="mt-0.5 line-clamp-2 text-xs text-gray-400">{{ $person['character'] }}</p>
+                        </li>
+                    @endforeach
+                </ul>
+            </section>
+        @endif
+    </div>
+
+    @if ($facts)
+        <aside class="h-fit rounded-2xl bg-ink-900/70 p-6 ring-1 ring-white/5">
+            <h2 class="text-xs font-bold uppercase tracking-[0.18em] text-gray-500">Details</h2>
+            <dl class="mt-4 space-y-4">
+                @foreach ($facts as $label => $value)
+                    <div>
+                        <dt class="text-xs text-gray-500">{{ $label }}</dt>
+                        <dd class="mt-0.5 text-sm font-semibold text-gray-100">{{ $value }}</dd>
+                    </div>
+                @endforeach
+            </dl>
+        </aside>
+    @endif
+</div>
+
+{{-- ===================================================================== TABS --}}
+<div id="episodes" class="shell mt-16 scroll-mt-24">
+    <div class="no-scrollbar mb-8 flex gap-1 overflow-x-auto border-b border-white/10" role="tablist">
+        @foreach (['episodes' => 'Episodes', 'more' => 'More like this', 'images' => 'Images'] as $key => $label)
+            <button type="button" role="tab" @click="tab = '{{ $key }}'" :aria-selected="tab === '{{ $key }}'"
+                    class="-mb-px shrink-0 border-b-2 px-4 py-3 text-sm font-semibold transition"
+                    :class="tab === '{{ $key }}' ? 'border-brand-400 text-white' : 'border-transparent text-gray-400 hover:text-white'">{{ $label }}</button>
+        @endforeach
+    </div>
+
+    {{-- Episodes --}}
+    <section x-show="tab === 'episodes'" aria-label="Episodes">
+        @if (count($seasonNumbers) > 0)
+            <div class="no-scrollbar -mx-4 mb-6 flex gap-2 overflow-x-auto px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:flex-wrap lg:px-0" role="radiogroup" aria-label="Season">
+                @foreach ($seasonNumbers as $number)
+                    <button type="button" role="radio" @click="season = {{ $number }}" :aria-checked="season === {{ $number }}"
+                            class="shrink-0 rounded-full px-4 py-2 text-sm font-semibold ring-1 transition"
+                            :class="season === {{ $number }} ? 'bg-brand-600 text-white ring-brand-500' : 'text-gray-300 ring-white/10 hover:bg-white/5'">
+                        Season {{ $number }}
                     </button>
-                    
-                    <!-- Trailer Modal -->
-                    <template x-if="isOpen">
-                        <div
-                            style="background-color: rgba(0, 0, 0, .5);"
-                            class="fixed top-0 left-0 w-full h-full flex items-center shadow-lg overflow-y-auto z-50"
-                        >
-                            <div class="container mx-auto lg:px-32 rounded-lg overflow-y-auto">
-                                <div class="bg-gray-900 rounded">
-                                    <div class="flex justify-end pr-4 pt-2">
-                                        <button
-                                            @click="isOpen = false"
-                                            @keydown.escape.window="isOpen = false"
-                                            class="text-3xl leading-none hover:text-gray-300">&times;
-                                        </button>
-                                    </div>
-                                    <div class="modal-body px-8 py-8">
-                                        <div class="responsive-container overflow-hidden relative pt-96">
-                                            @if(isset($tvShow['videos']['results'][0]['key']))
-                                                <iframe class="responsive-iframe absolute top-0 left-0 w-full h-full" src="https://www.youtube.com/embed/{{ $tvShow['videos']['results'][0]['key'] }}" style="border:0;" allow="autoplay; encrypted-media" allowfullscreen></iframe>
-                                            @else
-                                                <div class="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-gray-800">
-                                                    <p class="text-white text-xl">No trailer available</p>
-                                                </div>
-                                            @endif
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </template>
-                </div>
-                
-                <!-- Add to Watchlist Button (disabled) -->
-                <button class="btn btn-disabled w-full md:w-auto flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white md:px-6 py-2 rounded-box border border-white/20 backdrop-blur transition">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M17.593 3.322c1.1.128 1.907 1.077 1.907 2.185V21L12 17.25 4.5 21V5.507c0-1.108.806-2.057 1.907-2.185a48.507 48.507 0 0 1 11.186 0Z" />
-                    </svg>
-                    Add to Watchlist
-                </button>
+                @endforeach
             </div>
-        </div>
-    </div>
-</div>
 
-<div class="mx-6 md:mx-auto max-w-xl md:max-w-3xl lg:max-w-7xl py-8 md:py-10">
-    <div class="md:flex-row items-center md:items-start gap-6">
-        <h3 class="text-white font-semibold text-center md:text-left">Storyline</h3>
-        <p class="text-gray-300 mt-4 text-sm md:text-base">
-            {{ $tvShow['overview'] }}
-        </p>
-    </div>
-</div>
-<div  x-data="{ activeTab: 'episodes' }">
-
-<div class="max-w-xl mx-6 md:max-w-3xl lg:max-w-7xl md:mx-auto py-5">
-<div role="tablist" class="flex space-x-6">
-    <a role="tab" 
-    @click.prevent="activeTab = 'episodes'" 
-    :class="{ 'border-b-2 border-teal-500 pb-2': activeTab === 'episodes', 'text-gray-400': activeTab !== 'episodes' }"
-    class="cursor-pointer text-sm font-semibold transition duration-150 text-white">
-        Episodes
-    </a>
-    <a role="tab" 
-    @click.prevent="activeTab = 'similar'" 
-    :class="{ 'border-b-2 border-teal-500 pb-2': activeTab === 'similar', 'text-gray-400': activeTab !== 'similar' }"
-    class="cursor-pointer text-sm font-semibold transition duration-150 text-white">
-        Recommendations
-    </a>
-    <a role="tab" 
-    @click.prevent="activeTab = 'images'" 
-    :class="{ 'border-b-2 border-teal-500 pb-2': activeTab === 'images', 'text-gray-400': activeTab !== 'images' }"
-    class="cursor-pointer text-sm font-semibold transition duration-150 text-white">
-        Images
-    </a>
-</div>
-</div>
-
-<!-- Tab content panels -->
-<div class="mx-6 max-w-xl md:max-w-3xl lg:max-w-7xl md:mx-auto py-5">
-            <!-- Episodes Tab -->
-            <div x-show="activeTab === 'episodes'" class="tab-panel" x-data="{
-                selectedSeason: 1,
-                seasons: {{ json_encode(array_keys($episodes)) }},
-                episodes: {{ json_encode($episodes) }},
-                tvId: {{ $tvShow['id'] }}
-            }">
-                <div class="flex flex-row items-center justify-between mb-4">
-                    <h2 class="text-2xl font-bold">Episodes</h2>
-                    <div class="dropdown dropdown-end" x-ref="seasonDropdown">
-                        <div tabindex="0" role="button" class="btn btn-outline">
-                            Season <span x-text="selectedSeason"></span>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 ml-2" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                        <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-gray-900 rounded-box w-52">
-                            <template x-for="season in seasons" :key="season">
-                                <li>
-                                    <a @click="selectedSeason = season; $refs.seasonDropdown.querySelector('.dropdown-content').blur()" class="hover:bg-gray-700">
-                                        Season <span x-text="season"></span>
-                                    </a>
-                                </li>
+            <div class="grid gap-4 lg:grid-cols-2">
+                <template x-for="ep in episodes[season] || []" :key="ep.id">
+                    <article class="group flex flex-col gap-4 rounded-2xl bg-ink-900/70 p-3 ring-1 ring-white/5 transition hover:bg-ink-900 hover:ring-white/15 sm:flex-row sm:p-4">
+                        <button type="button" @click="play(season, ep.episode_number)"
+                                class="relative aspect-video w-full shrink-0 overflow-hidden rounded-xl bg-ink-800 sm:w-52 xl:w-60"
+                                :aria-label="`Play episode ${ep.episode_number}: ${ep.name}`">
+                            <template x-if="ep.still_path">
+                                <img :src="`https://image.tmdb.org/t/p/w300${ep.still_path}`" alt="" loading="lazy" class="size-full object-cover transition duration-500 group-hover:scale-105">
                             </template>
-                        </ul>
-                    </div>
-                </div>
+                            <template x-if="!ep.still_path">
+                                <span class="grid size-full place-items-center text-gray-600"><x-icon name="tv" class="size-8" /></span>
+                            </template>
+                            <span class="absolute inset-0 grid place-items-center bg-black/25 transition sm:bg-black/0 sm:group-hover:bg-black/35">
+                                <span class="grid size-12 place-items-center rounded-full bg-brand-600/90 text-white shadow-xl transition sm:scale-90 sm:opacity-0 sm:group-hover:scale-100 sm:group-hover:opacity-100">
+                                    <x-icon name="play-solid" class="size-5 translate-x-px" />
+                                </span>
+                            </span>
+                            <template x-if="ep.runtime">
+                                <span class="absolute bottom-2 right-2 rounded-md bg-black/75 px-1.5 py-0.5 text-[11px] font-bold text-white" x-text="`${ep.runtime}m`"></span>
+                            </template>
+                        </button>
 
-                <div class="grid gap-4">
-                    <template x-for="episode in episodes[selectedSeason]" :key="episode.id">
-                        <div class="card bg-gray-800 shadow-xl">
-                            <div class="card-body">
-                                <div class="flex items-start gap-4">
-                                    <div class="flex-shrink-0">
-                                        <div x-data="{ isOpen: false }">
-                                            <div 
-                                                @click="isOpen = true" 
-                                                class="relative w-32 cursor-pointer group"
-                                            >
-                                                <img 
-                                                    :src="episode.still_path 
-                                                        ? `https://image.tmdb.org/t/p/w200/${episode.still_path}`
-                                                        : '/placeholder.jpg'"
-                                                    :alt="episode.name"
-                                                    class="rounded-lg mt-10 h-28 md:mt-5 md:h-full"
-                                                >
-
-                                                <!-- Play Button Overlay -->
-                                                <div class="absolute inset-0 flex items-center justify-center">
-                                                    <div class="bg-black bg-opacity-50 rounded-full p-2 group-hover:scale-110 transition">
-                                                        <!-- You can use a play SVG or emoji, or an icon library -->
-                                                        <svg class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                                            <path d="M6 4l12 6-12 6V4z" />
-                                                        </svg>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-
-                                            
-                                            <!-- Episode Modal -->
-                                            <template x-if="isOpen">
-                                                <div
-                                                    style="background-color: rgba(0, 0, 0, .5);"
-                                                    class="fixed top-0 left-0 w-full h-full flex items-center shadow-lg overflow-y-auto z-50"
-                                                >
-                                                    <div class="container mx-auto lg:px-32 rounded-lg overflow-y-auto">
-                                                        <div class="bg-gray-900 rounded">
-                                                            <div class="flex justify-end pr-4 pt-2">
-                                                                <button
-                                                                    @click="isOpen = false"
-                                                                    @keydown.escape.window="isOpen = false"
-                                                                    class="text-3xl leading-none hover:text-gray-300">&times;
-                                                                </button>
-                                                            </div>
-                                                            <div class="modal-body px-8 py-8">
-                                                                <div class="responsive-container overflow-hidden relative pt-96">
-                                                                    <iframe 
-                                                                        class="responsive-iframe absolute top-0 left-0 w-full h-full" 
-                                                                        x-bind:src="`https://vidfast.pro/tv/${tvId}/${selectedSeason}/${episode.episode_number}?nextButton=true&autoNext=true`"
-                                                                        style="border:0;" 
-                                                                        allow="autoplay; encrypted-media" 
-                                                                        allowfullscreen>
-                                                                    </iframe>
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </template>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <h3 class="card-title text-md md:text-lg">
-                                            Episode <span x-text="episode.episode_number"></span>: 
-                                            <span x-text="episode.name"></span>
-                                        </h3>
-                                        <div class="badge badge-outline" x-text="'Runtime: ' + episode.runtime + 'm'"></div>
-                                        <p class="mt-2 text-gray-300 line-clamp-3" x-text="episode.overview || 'No description available'"></p>
-                                        <div class="mt-2 flex items-center gap-2 text-sm">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                                            </svg>
-                                            <span x-text="episode.vote_average.toFixed(1)"></span>
-                                            <span class="mx-2">|</span>
-                                            <span x-text="'Aired: ' + episode.air_date"></span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="min-w-0 flex-1 sm:py-1">
+                            <p class="text-xs font-bold uppercase tracking-wider text-brand-400" x-text="`Episode ${ep.episode_number}`"></p>
+                            <h3 class="mt-1 line-clamp-2 text-base font-bold leading-snug text-white" x-text="ep.name"></h3>
+                            <p class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-400">
+                                <template x-if="ep.vote_average">
+                                    <span class="flex items-center gap-1 font-semibold text-amber-400"><x-icon name="star-solid" class="size-3" /><span x-text="Number(ep.vote_average).toFixed(1)"></span></span>
+                                </template>
+                                <span x-text="airDate(ep.air_date)"></span>
+                            </p>
+                            <p class="mt-2 line-clamp-3 text-sm leading-relaxed text-gray-300" x-text="ep.overview || 'No description available.'"></p>
                         </div>
-                    </template>
-                </div>
+                    </article>
+                </template>
             </div>
+        @else
+            <x-empty-state icon="tv" title="No episodes yet" message="Episode details for this show aren’t available." />
+        @endif
+    </section>
 
-            <!-- Similar Tab -->
-            <div x-show="activeTab === 'similar'" class="tab-panel">
-                <h2 class="text-2xl font-bold">More Like This Series</h2>
-                <div class="container mx-auto max-w-7xl">
-                    <div class="similar-shows">
-                        <div
-                            x-data="{
-                                movies: {{ json_encode($similarTV) }},
-                                genres: {{ json_encode($genres) }},
-                                getChunkSize() {
-                                    if (window.innerWidth < 640) return 1;
-                                    if (window.innerWidth < 811) return 3;
-                                    return 5;
-                                },
-                                chunks: [],
-                                currentIndex: 0,
-                                formatVoteAverage(vote) {
-                                    return (vote * 10).toFixed(0) + '%';
-                                },
-                                init() {
-                                    this.updateChunks();
-                                    window.addEventListener('resize', () => this.updateChunks());
-                                },
-                                updateChunks() {
-                                    const chunkSize = this.getChunkSize();
-                                    this.chunks = [];
+    {{-- More like this --}}
+    <section x-show="tab === 'more'" x-cloak class="space-y-12">
+        <x-poster-row title="More Like This" :items="$similarTV" type="tv" variant="backdrop" :genres="$genres" />
+        <x-poster-row title="You Might Also Like" :items="$recommendedTV" type="tv" variant="backdrop" :genres="$genres" />
+    </section>
 
-                                    const filteredMovies = this.movies.filter(movie => movie.backdrop_path);
-
-                                    for (let i = 0; i < filteredMovies.length; i += chunkSize) {
-                                        this.chunks.push(filteredMovies.slice(i, i + chunkSize));
-                                    }
-
-                                    if (this.currentIndex >= this.chunks.length) {
-                                        this.currentIndex = this.chunks.length - 1;
-                                    }
-                                },
-                                next() {
-                                    if (this.currentIndex < this.chunks.length - 1) {
-                                        this.currentIndex++;
-                                    }
-                                },
-                                prev() {
-                                    if (this.currentIndex > 0) {
-                                        this.currentIndex--;
-                                    }
-                                }
-                            }"
-                            class="relative"
-                        >
-
-                            <button 
-                                @click="prev" 
-                                x-show="currentIndex > 0"
-                                class="absolute left-0 top-1/2 z-10 transform -translate-y-1/2 bg-gray-900/80 text-white p-2 rounded-full hover:bg-gray-800"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                                </svg>
-                            </button>
-                            
-                            <div class="overflow-hidden px-4">
-                                <div
-                                    class="flex transition-transform duration-300 ease-in-out"
-                                    :style="`transform: translateX(-${currentIndex * 100}%)`"
-                                >
-                                    <template x-for="(chunk, index) in chunks" :key="index">
-                                        <div class="w-full flex-shrink-0">
-                                            <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                                                <template x-for="(tv, tvIndex) in chunk" :key="tv.id">
-                                                    <div class="mt-4 md:mt-8">
-                                                        
-                                                        <div class="flex flex-col">
-                                                            <a :href="`/shows/${tv.id}`">
-                                                                <img :src="`https://image.tmdb.org/t/p/w500/${tv.backdrop_path}`"
-                                                                    :alt="tv.name"
-                                                                    class="w-full block hover:opacity-75 transition ease-in-out duration-150 rounded-lg shadow">
-                                                            </a>
-
-                                                            <div class="text-white p-2 rounded-b-lg">
-                                                                <a :href="`/shows/${tv.id}`" class="text-base md:text-lg mt-1 hover:text-gray-300 line-clamp-1" x-text="tv.name"></a>
-                                                                <div class="flex items-center text-xs md:text-sm">
-                                                                    <span>
-                                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-yellow-400">
-                                                                            <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" />
-                                                                        </svg>
-                                                                    </span>
-                                                                    <span class="ml-1 font-semibold" x-text="formatVoteAverage(tv.vote_average)"></span>
-                                                                    <span class="mx-1">|</span>
-                                                                    <div class="text-xs mt-1 font-medium text-gray-500 line-clamp-1">
-                                                                        <template x-for="(genreId, genreIndex) in tv.genre_ids" :key="genreId">
-                                                                            <span>
-                                                                                <span x-text="genres[genreId]"></span>
-                                                                                <template x-if="genreIndex < tv.genre_ids.length - 1">
-                                                                                    <span>, </span>
-                                                                                </template>
-                                                                            </span>
-                                                                        </template>
-                                                                    </div>
-                                                                </div>
-
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </template>
-                                            </div>
-                                        </div>
-                                    </template>
-                                </div>
-                            </div>
-                                                            
-                            <button 
-                                @click="next" 
-                                x-show="currentIndex < chunks.length - 1"
-                                class="absolute right-0 top-1/2 transform -translate-y-1/2 bg-gray-900/80 text-white p-2 rounded-full hover:bg-gray-800"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-
-                    <h2 class="text-2xl font-bold mt-3">You Might Also Like</h2>                                             
-                    <div class="recommended-tv">
-                        <div
-                            x-data="{
-                                movies: {{ json_encode($recommendedTV) }},
-                                genres: {{ json_encode($genres) }},
-                                getChunkSize() {
-                                    if (window.innerWidth < 640) return 1;
-                                    if (window.innerWidth < 811) return 3;
-                                    return 5;
-                                },
-                                chunks: [],
-                                currentIndex: 0,
-                                formatVoteAverage(vote) {
-                                    return (vote * 10).toFixed(0) + '%';
-                                },
-                                init() {
-                                    this.updateChunks();
-                                    window.addEventListener('resize', () => this.updateChunks());
-                                },
-                                updateChunks() {
-                                    const chunkSize = this.getChunkSize();
-                                    this.chunks = [];
-
-                                    const filteredMovies = this.movies.filter(movie => movie.backdrop_path);
-
-                                    for (let i = 0; i < filteredMovies.length; i += chunkSize) {
-                                        this.chunks.push(filteredMovies.slice(i, i + chunkSize));
-                                    }
-
-                                    if (this.currentIndex >= this.chunks.length) {
-                                        this.currentIndex = this.chunks.length - 1;
-                                    }
-                                },
-                                next() {
-                                    if (this.currentIndex < this.chunks.length - 1) {
-                                        this.currentIndex++;
-                                    }
-                                },
-                                prev() {
-                                    if (this.currentIndex > 0) {
-                                        this.currentIndex--;
-                                    }
-                                }
-                            }"
-                            class="relative"
-                        >
-
-                            <button 
-                                @click="prev" 
-                                x-show="currentIndex > 0"
-                                class="absolute left-0 top-1/2 z-10 transform -translate-y-1/2 bg-gray-900/80 text-white p-2 rounded-full hover:bg-gray-800"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                                </svg>
-                            </button>
-                            
-                            <div class="overflow-hidden px-4">
-                                <div
-                                    class="flex transition-transform duration-300 ease-in-out"
-                                    :style="`transform: translateX(-${currentIndex * 100}%)`"
-                                >
-                                    <template x-for="(chunk, index) in chunks" :key="index">
-                                        <div class="w-full flex-shrink-0">
-                                            <div class="grid grid-cols-1 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                                                <template x-for="(tv, tvIndex) in chunk" :key="tv.id">
-                                                    <div class="mt-4 md:mt-8">
-                                                        
-                                                        <div class="flex flex-col">
-                                                            <a :href="`/shows/${tv.id}`">
-                                                                <img :src="`https://image.tmdb.org/t/p/w500/${tv.backdrop_path}`"
-                                                                    :alt="tv.name"
-                                                                    class="w-full block hover:opacity-75 transition ease-in-out duration-150 rounded-lg shadow">
-                                                            </a>
-
-                                                            <div class="text-white p-2 rounded-b-lg">
-                                                                <a :href="`/shows/${tv-show.id}`" class="text-base md:text-lg mt-1 hover:text-gray-300 line-clamp-1" x-text="tv.name"></a>
-                                                                <div class="flex items-center text-xs md:text-sm">
-                                                                    <span>
-                                                                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4 text-yellow-400">
-                                                                            <path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" clip-rule="evenodd" />
-                                                                        </svg>
-                                                                    </span>
-                                                                    <span class="ml-1 font-semibold" x-text="formatVoteAverage(tv.vote_average)"></span>
-                                                                    <span class="mx-1">|</span>
-                                                                    <div class="text-xs mt-1 font-medium text-gray-500 line-clamp-1">
-                                                                        <template x-for="(genreId, genreIndex) in tv.genre_ids" :key="genreId">
-                                                                            <span>
-                                                                                <span x-text="genres[genreId]"></span>
-                                                                                <template x-if="genreIndex < tv.genre_ids.length - 1">
-                                                                                    <span>, </span>
-                                                                                </template>
-                                                                            </span>
-                                                                        </template>
-                                                                    </div>
-                                                                </div>
-
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </template>
-                                            </div>
-                                        </div>
-                                    </template>
-                                </div>
-                            </div>
-                                                            
-                            <button 
-                                @click="next" 
-                                x-show="currentIndex < chunks.length - 1"
-                                class="absolute right-0 top-1/2 transform -translate-y-1/2 bg-gray-900/80 text-white p-2 rounded-full hover:bg-gray-800"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
+    {{-- Images --}}
+    <section x-show="tab === 'images'" x-cloak aria-label="Images">
+        @if (count($backdrops))
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach ($backdrops as $image)
+                    <button type="button" @click="lightbox = '{{ $image['file_path'] }}'" class="group overflow-hidden rounded-xl ring-1 ring-white/5">
+                        <img src="https://image.tmdb.org/t/p/w780{{ $image['file_path'] }}" alt="Still from {{ $tvShow['name'] }}" loading="lazy"
+                             class="aspect-video w-full object-cover transition duration-500 group-hover:scale-105">
+                    </button>
+                @endforeach
             </div>
-            <!-- Images Tab with Modal -->
-            <div x-show="activeTab === 'images'" class="tab-panel" x-data="{ isOpen: false, image: '' }">
-                <div class="movie-images" x-data="{ isOpen: false, image: ''}">
-                    <div class="container mx-auto max-w-7xl">
-                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
-                            @foreach (array_slice($tvShow['images']['backdrops'] ?? [], 0, 15) as $image)
-                                    <div class="mt-8">
-                                        <a
-                                            @click.prevent="
-                                                isOpen = true
-                                                image='{{ 'https://image.tmdb.org/t/p/w1280'.$image['file_path'] }}'
-                                            "
-                                            href="#"
-                                        >
-                                            <img src="{{ 'https://image.tmdb.org/t/p/w500'.$image['file_path'] }}" loading="lazy" alt="{{ $tvShow['name'] }} backdrop" class="hover:opacity-75 transition ease-in-out duration-150">
-                                        </a>
-                                    </div>
-                            @endforeach
-                        </div>
+        @else
+            <p class="py-10 text-center text-sm text-gray-500">No images available.</p>
+        @endif
 
-                        <div
-                            style="background-color: rgba(0, 0, 0, .5);"
-                            class="fixed top-5 left-0 w-full py-96 h-80 flex items-center shadow-lg overflow-y-auto z-50"
-                            x-show="isOpen"
-                        >
-                            <div class="container mx-auto lg:px-32 rounded-lg overflow-y-auto">
-                                <div class="bg-gray-900 rounded">
-                                    <div class="flex justify-end pr-4 pt-2">
-                                        <button
-                                            @click="isOpen = false"
-                                            @keydown.escape.window="isOpen = false"
-                                            class="text-3xl leading-none hover:text-gray-300">&times;
-                                        </button>
-                                    </div>
-                                    <div class="modal-body px-8 py-8">
-                                        <img :src="image" alt="poster">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+        <template x-teleport="body">
+            <div x-show="lightbox" x-cloak x-transition.opacity @click.self="lightbox = null" @keydown.escape.window="lightbox = null"
+                 class="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 backdrop-blur-sm">
+                <button type="button" @click="lightbox = null" class="absolute right-4 top-4 grid size-10 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20" aria-label="Close image">
+                    <x-icon name="x" class="size-5" />
+                </button>
+                <img :src="lightbox ? `https://image.tmdb.org/t/p/w1280${lightbox}` : null" alt="" class="max-h-[85svh] w-auto max-w-full rounded-xl shadow-2xl">
             </div>
-        </div>
-    </div>
+        </template>
+    </section>
 </div>
-
+</div>
 @endsection

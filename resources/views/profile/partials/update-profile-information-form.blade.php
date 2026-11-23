@@ -54,7 +54,7 @@
                     <p class="text-sm mt-2 text-gray-300">
                         {{ __('Your email address is unverified.') }}
 
-                        <button type="submit" formaction="{{ route('verification.send') }}" formmethod="POST" class="underline text-sm text-gray-200 hover:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <button type="submit" formaction="{{ route('verification.send') }}" formmethod="POST" class="underline text-sm text-gray-200 hover:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-500">
                             @csrf
                             {{ __('Click here to re-send the verification email.') }}
                         </button>
@@ -78,7 +78,7 @@
                     x-show="show"
                     x-transition
                     x-init="setTimeout(() => show = false, 2000)"
-                    class="text-sm text-green-600"
+                    class="text-sm text-brand-300"
                 >{{ __('Profile Updated Successfully') }}</p>
             @endif
         </div>

@@ -1,37 +1,25 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" data-theme="envydeo">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>Envydeo Login</title>
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
-
-    @vite('resources/css/app.css')
-    @livewireStyles
+    @include('layouts.partials.head')
 </head>
-<body class="font-sans bg-gray-900 text-white">
+<body class="flex flex-col">
     @include('layouts.nav')
-    <div class="min-h-1/2 flex flex-col sm:justify-center items-center sm:pt-0">
-        <div class="w-full max-w-xs md:max-w-md md:mt-36 md:mb-36 mb-10 px-6 py-4 bg-gray-800 shadow-md overflow-hidden sm:rounded-lg">
+
+    <main id="main" class="relative isolate flex flex-1 items-center justify-center overflow-hidden px-4 pb-16 pt-28">
+        {{-- Soft brand glow behind the card --}}
+        <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
+            <div class="absolute left-1/2 top-24 size-[36rem] -translate-x-1/2 rounded-full bg-brand-600/15 blur-3xl"></div>
+            <div class="absolute bottom-0 right-0 size-80 rounded-full bg-sky-500/5 blur-3xl"></div>
+        </div>
+
+        <div class="w-full max-w-md rounded-3xl bg-ink-900/80 p-6 shadow-2xl shadow-black/40 ring-1 ring-white/10 backdrop-blur-xl sm:p-8">
             {{ $slot }}
         </div>
-    </div>
+    </main>
+
     @include('layouts.footer')
+
+    @livewireScripts
 </body>
-@livewireScripts
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        if (window.Alpine) {
-            window.dispatchEvent(new CustomEvent('alpine:initialized'));
-        } else {
-            import('https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js').then(module => {
-                window.Alpine = module.default;
-                Alpine.start();
-            });
-        }
-    });
-</script>
 </html>

@@ -1,34 +1,43 @@
-<div>
-    <div class="dropdown dropdown-end">
-        <div tabindex="0" role="button" class="rounded-full avatar hover:ring hover:ring-success transition-all duration-300">
-            <div class="w-10 rounded-full border-2 border-primary shadow-lg">
-                <img
-                    src="{{ Auth::user()->getFirstMediaUrl('avatar') ?: 'https://ui-avatars.com/api/?name=' . urlencode(Auth::user()->name) }}"
-                    alt="{{ Auth::user()->name }}"
-                />
-            </div>
-            <div class="ms-1 mt-3">
-                <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                </svg>
-            </div>
+@php
+    $user = Auth::user();
+    $avatar = $user->getFirstMediaUrl('avatar');
+    $initials = collect(explode(' ', trim($user->name)))->filter()->take(2)->map(fn ($p) => mb_strtoupper(mb_substr($p, 0, 1)))->implode('');
+@endphp
+
+<div x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false" class="relative">
+    <button type="button" @click="open = !open"
+            class="flex items-center gap-1.5 rounded-full p-1 pr-2 transition hover:bg-white/10"
+            :aria-expanded="open" aria-haspopup="menu" aria-label="Account menu">
+        @if ($avatar)
+            <img src="{{ $avatar }}" alt="" class="size-9 rounded-full object-cover ring-2 ring-brand-500/70">
+        @else
+            <span class="grid size-9 place-items-center rounded-full bg-brand-700 text-sm font-bold text-white ring-2 ring-brand-500/70">{{ $initials }}</span>
+        @endif
+        <x-icon name="chevron-down" class="size-4 text-gray-400 transition" x-bind:class="open && 'rotate-180'" />
+    </button>
+
+    <div x-show="open" x-cloak
+         x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100"
+         x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+         class="absolute right-0 mt-3 w-64 origin-top-right overflow-hidden rounded-2xl bg-ink-900/95 shadow-2xl shadow-black/50 ring-1 ring-white/10 backdrop-blur-xl"
+         role="menu">
+        <div class="border-b border-white/5 px-4 py-3">
+            <p class="truncate text-sm font-semibold text-white">{{ $user->name }}</p>
+            <p class="truncate text-xs text-gray-400">{{ $user->email }}</p>
         </div>
-        <ul tabindex="0" class="mt-3 z-[1] shadow-lg menu menu-sm dropdown-content bg-gray-800 rounded-lg w-64 border border-gray-700 transition-all duration-200 overflow-hidden">
-            <li class="font-semibold text-sm py-6 text-gray-200 border-b flex items-center gap-3">
-                <div class="w-full rounded-b-md">
-                    <img class="h-10 w-10" src="{{ Auth::user()->getFirstMediaUrl('avatar') ?: 'https://ui-avatars.com/api/?name='.urlencode(Auth::user()->name) }}" alt="{{ Auth::user()->name }}" />
-                    <span>{{ Auth::user()->name }}</span>
-                </div>
-            </li>
-            <li><a href="{{ route('profile.edit') }}" class="hover:bg-gray-700 py-5 transition-colors duration-200 flex gap-2 items-center"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg> Profile</a></li>
+        <div class="p-1.5">
+            <a href="{{ route('profile.edit') }}" role="menuitem" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-200 transition hover:bg-white/5 hover:text-white">
+                <x-icon name="user" class="size-5 text-gray-400" /> Profile
+            </a>
+            <a href="{{ route('watchlist.index') }}" role="menuitem" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-200 transition hover:bg-white/5 hover:text-white">
+                <x-icon name="bookmark" class="size-5 text-gray-400" /> Watchlist
+            </a>
             <form method="POST" action="{{ route('logout') }}">
-                <li>
-                    @csrf
-                    <a href="{{ route('logout'  ) }}" onclick="event.preventDefault(); this.closest('form').submit();" class="hover:bg-gray-700 w-full py-5 transition-colors duration-200 flex gap-2 items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" /></svg> Log out
-                    </a>
-                </li>
+                @csrf
+                <button type="submit" role="menuitem" class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-200 transition hover:bg-white/5 hover:text-white">
+                    <x-icon name="logout" class="size-5 text-gray-400" /> Log out
+                </button>
             </form>
-        </ul>
+        </div>
     </div>
 </div>

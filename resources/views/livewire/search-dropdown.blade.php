@@ -1,120 +1,74 @@
-<div>
-    <div class="relative md:mt-0" x-data="{ isOpen: false, inputExpanded: false }">
-        <div class="flex items-center">
-            <div 
-                x-show="!inputExpanded" 
-                @click="inputExpanded = true; $nextTick(() => $refs.searchInput.focus())"
-                class="cursor-pointer p-2 rounded-full hover:bg-gray-700 transition"
-            >
-                <svg class="w-5 h-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-                </svg>
-            </div>
+<div x-data="{ open: false }" @keydown.escape.window="open = false" @click.outside="open = false" class="relative">
+    <button type="button"
+            @click="open = !open; if (open) $nextTick(() => $refs.input.focus())"
+            class="grid size-10 place-items-center rounded-full text-gray-200 transition hover:bg-white/10 hover:text-white"
+            :class="open && 'bg-white/10 text-white'"
+            aria-label="Search" :aria-expanded="open">
+        <x-icon name="search" class="size-5" />
+    </button>
 
-            <div 
-                x-show="inputExpanded" 
-                x-transition:enter="transition ease-out duration-200"
-                x-transition:enter-start="opacity-0 transform -translate-x-8"
-                x-transition:enter-end="opacity-100 transform translate-x-0"
-                class="absolute right-0 w-64"
-                @click.away="inputExpanded = false; isOpen = false"
-            >
-                <form wire:submit.prevent="searchAll">
-                    <div class="relative">
-                        <input
-                            x-ref="searchInput"
-                            wire:model.live.debounce.400ms="search"
-                            type="text"
-                            class="bg-gray-800 rounded-full w-full px-4 pl-10 py-2 focus:outline-none focus:shadow-outline text-sm"
-                            placeholder="Search Movies & TV Shows"
-                            @focus="isOpen = true"
-                            @keydown="isOpen = true"
-                            @keydown.escape.window="inputExpanded = false; isOpen = false"
-                        >
-                        
-                        <div class="absolute top-2.5 left-3">
-                            <svg class="w-4 h-4 text-gray-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
-                            </svg>
-                        </div>
+    <div x-show="open" x-cloak
+         x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-100" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+         class="fixed inset-x-3 top-[4.25rem] z-50 sm:absolute sm:inset-x-auto sm:right-0 sm:top-full sm:mt-3 sm:w-[24rem]">
+        <div class="overflow-hidden rounded-2xl bg-ink-900/95 shadow-2xl shadow-black/50 ring-1 ring-white/10 backdrop-blur-xl">
+            <form wire:submit.prevent="searchAll" class="relative border-b border-white/5">
+                <x-icon name="search" class="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-gray-500" />
+                <input x-ref="input"
+                       wire:model.live.debounce.400ms="search"
+                       type="search"
+                       class="w-full bg-transparent py-4 pl-12 pr-12 text-sm text-white placeholder:text-gray-500 focus:outline-none"
+                       placeholder="Search movies & TV shows…"
+                       aria-label="Search movies and TV shows"
+                       autocomplete="off">
+                <span wire:loading class="loading loading-spinner loading-sm absolute right-4 top-1/2 -translate-y-1/2 text-brand-400"></span>
+            </form>
 
-                        <div wire:loading class="absolute right-3 top-1">
-                            <div class="loading loading-dots"></div>
-                        </div>
-                    </div>
-                </form>
-
-                @if(strlen($search) >= 2)
-                    <div class="absolute bg-gray-800 text-sm rounded w-full mt-2 z-50 max-h-64 md:max-h-96 overflow-y-auto" 
-                        x-show.transition.opacity="isOpen"
-                        @keydown.escape="isOpen = false"
-                    >
-                        @if($searchResults->count() > 0)
-                            <ul>
-                                @foreach($searchResults as $result)
-                                    @php
-                                        $isMovie = $result['media_type'] === 'movie';
-                                        $title = $isMovie ? $result['title'] : $result['name'];
-                                        $routeName = $isMovie ? 'movie.show' : 'show.show';
-                                        $releaseDate = $isMovie 
-                                            ? ($result['release_date'] ?? 'N/A')
-                                            : ($result['first_air_date'] ?? 'N/A');
-                                        $year = substr($releaseDate, 0, 4);
-                                    @endphp
-
-                                    <li class="border-b border-gray-700">
-                                        <a 
-                                            href="{{ route($routeName, $result['id']) }}"
-                                            class="flex items-center hover:bg-gray-700 px-3 py-2 md:py-3 transition ease-in-out duration-150"
-                                            @if ($loop->last) @keydown.tab="isOpen = false" @endif
-                                        >
-                                            @if($result['poster_path'])
-                                                <img src="https://image.tmdb.org/t/p/w92/{{ $result['poster_path'] }}"
-                                                    alt="poster" class="w-8 h-12 object-cover rounded shadow">
-                                            @else
-                                                <div class="w-8 h-12 bg-gray-700 rounded shadow flex items-center justify-center">
-                                                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                                                    </svg>
-                                                </div>
-                                            @endif
-
-                                            <div class="ml-4 flex-1 min-w-0">
-                                                <div class="flex items-center gap-2">
-                                                    <span class="line-clamp-1 font-medium">{{ $title }}</span>
-                                                    @if($year !== 'N/A')
-                                                        <span class="text-xs text-gray-400">({{ $year }})</span>
-                                                    @endif
-                                                </div>
-                                                <div class="flex items-center gap-2 mt-1">
-                                                    <span class="text-xs px-1.5 py-0.5 rounded bg-gray-900 {{ $isMovie }}">
-                                                        {{ strtoupper($result['media_type']) }}
-                                                    </span>
-                                                    <span class="text-xs text-yellow-500">
-                                                        ★ {{ number_format($result['vote_average'], 1) }}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </a>
-                                    </li>
-                                @endforeach
-                            </ul>
-                            @if($searchResults->count() >= 4)
-                                <div class="px-3 py-3 text-center border-t border-gray-700">
-                                    <a 
-                                        href="{{ route('search.results', ['query' => $search]) }}" 
-                                        class="text-blue-400 hover:text-blue-300 transition"
-                                    >
-                                        View all results for "{{ $search }}"
+            @if (strlen($search) >= 2)
+                <div class="max-h-[60vh] overflow-y-auto">
+                    @if ($searchResults->count() > 0)
+                        <ul class="divide-y divide-white/5">
+                            @foreach ($searchResults as $result)
+                                @php
+                                    $isMovie = $result['media_type'] === 'movie';
+                                    $title = $isMovie ? ($result['title'] ?? '') : ($result['name'] ?? '');
+                                    $year = substr(($isMovie ? $result['release_date'] ?? '' : $result['first_air_date'] ?? ''), 0, 4);
+                                @endphp
+                                <li>
+                                    <a href="{{ route($isMovie ? 'movie.show' : 'show.show', $result['id']) }}"
+                                       class="flex items-center gap-3 px-4 py-3 transition hover:bg-white/5">
+                                        @if (!empty($result['poster_path']))
+                                            <img src="https://image.tmdb.org/t/p/w92{{ $result['poster_path'] }}" alt="" class="h-14 w-10 shrink-0 rounded-md object-cover">
+                                        @else
+                                            <span class="grid h-14 w-10 shrink-0 place-items-center rounded-md bg-ink-800 text-gray-600">
+                                                <x-icon :name="$isMovie ? 'film' : 'tv'" class="size-4" />
+                                            </span>
+                                        @endif
+                                        <span class="min-w-0 flex-1">
+                                            <span class="line-clamp-1 text-sm font-semibold text-white">{{ $title }}</span>
+                                            <span class="mt-1 flex items-center gap-2 text-xs text-gray-400">
+                                                <span class="rounded bg-white/10 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-gray-300">{{ $isMovie ? 'Movie' : 'TV' }}</span>
+                                                @if ($year) <span>{{ $year }}</span> @endif
+                                                @if (!empty($result['vote_average']))
+                                                    <span class="flex items-center gap-0.5 text-amber-400"><x-icon name="star-solid" class="size-3" />{{ number_format($result['vote_average'], 1) }}</span>
+                                                @endif
+                                            </span>
+                                        </span>
                                     </a>
-                                </div>
-                            @endif
-                        @else
-                            <div class="px-3 py-3">No results for "{{ $search }}"</div>
-                        @endif
-                    </div>
-                @endif
-            </div>
+                                </li>
+                            @endforeach
+                        </ul>
+                        <a href="{{ route('search.results', ['query' => $search]) }}"
+                           class="block border-t border-white/5 px-4 py-3 text-center text-sm font-semibold text-brand-300 transition hover:bg-white/5">
+                            See all results for “{{ $search }}”
+                        </a>
+                    @else
+                        <p class="px-4 py-6 text-center text-sm text-gray-400">No results for “{{ $search }}”</p>
+                    @endif
+                </div>
+            @else
+                <p class="px-4 py-4 text-xs text-gray-500">Type at least 2 characters · press Enter to see everything</p>
+            @endif
         </div>
     </div>
 </div>
