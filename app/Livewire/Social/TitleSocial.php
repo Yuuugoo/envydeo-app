@@ -68,6 +68,9 @@ class TitleSocial extends Component
     public function startMovieNight(SocialGraph $graph, MovieNightRooms $rooms)
     {
         $viewer = auth()->user();
+        if ($this->type !== 'movie') {
+            return null; // Movie Night deals movies only
+        }
         if (!$viewer?->username) {
             return $this->redirectRoute('login');
         }
@@ -86,15 +89,12 @@ class TitleSocial extends Component
         return $this->redirectRoute('movie-night.show', $room->code);
     }
 
-    /** People the viewer follows who have this title on their watchlist (movies only). */
+    /** People the viewer follows who have this title (movie or show) on their watchlist. */
     private function interestedPeople(SocialGraph $graph, User $viewer)
     {
-        if ($this->type !== 'movie') {
-            return collect();
-        }
         $ids = array_diff($graph->followingIds($viewer), $graph->hiddenIds($viewer));
 
-        return User::whereIn('id', Watchlist::whereIn('user_id', $ids)->where('tmdb_id', $this->tmdbId)->pluck('user_id'))
+        return User::whereIn('id', Watchlist::whereIn('user_id', $ids)->where('tmdb_id', $this->tmdbId)->where('media_type', $this->type)->pluck('user_id'))
             ->whereNotNull('username')->get();
     }
 
@@ -113,7 +113,10 @@ class TitleSocial extends Component
             ->whereNotIn('user_id', $hidden)
             ->withCount('likes')->orderByDesc('likes_count')->latest()->limit(20)->get();
 
-        $community = (clone $base)->whereNotNull('rating')->whereHas('user', fn ($q) => $q->where('is_private', false));
+        // Envydeo verdicts from public profiles: count per verdict → "% recommend" + a breakdown bar.
+        $verdicts = (clone $base)->whereNotNull('verdict')->whereHas('user', fn ($q) => $q->where('is_private', false))
+            ->toBase()->selectRaw('verdict, count(*) as n')->groupBy('verdict')->pluck('n', 'verdict')->map(fn ($n) => (int) $n);
+        $verdictTotal = $verdicts->sum();
         $tmdbReviews = $this->tab === 'tmdb'
             ? collect($tmdb->get("/{$this->type}/{$this->tmdbId}/reviews", [], Tmdb::DAY)['results'] ?? [])->take(8)
             : collect();
@@ -123,10 +126,12 @@ class TitleSocial extends Component
             'scoresEnabled' => $scores->enabled(),
             'interested' => $viewer ? $this->interestedPeople($graph, $viewer) : collect(),
             'friendEntries' => $friendEntries,
-            'friendAverage' => $friendEntries->where('user_id', '!=', $viewer?->id)->whereNotNull('rating')->avg('rating'),
+            'friendVerdicts' => $friendEntries->where('user_id', '!=', $viewer?->id)->whereNotNull('verdict')->unique('user_id'),
             'everyone' => $everyone,
-            'communityAverage' => $community->avg('rating'),
-            'communityCount' => $community->count(),
+            'verdicts' => $verdicts,
+            'verdictTotal' => $verdictTotal,
+            'recommendPct' => $verdictTotal ? (int) round(100 * $verdicts->only(DiaryEntry::RECOMMEND)->sum() / $verdictTotal) : null,
+            'bestWithFriends' => (clone $base)->where('best_with_friends', true)->count(),
             'tmdbReviews' => $tmdbReviews,
             'links' => array_filter([
                 'IMDb' => $this->imdbId ? "https://www.imdb.com/title/{$this->imdbId}/" : null,

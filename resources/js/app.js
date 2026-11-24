@@ -1,6 +1,5 @@
 import './bootstrap';
 import posterRow from './components/poster-row';
-import heroCarousel from './components/hero-carousel';
 import swipeDeck from './components/swipe-deck';
 import installApp from './components/install-app';
 import pushToggle from './components/push-toggle';
@@ -10,7 +9,6 @@ import pushToggle from './components/push-toggle';
 // starts Alpine, so registering on `alpine:init` is safe.
 document.addEventListener('alpine:init', () => {
     window.Alpine.data('posterRow', posterRow);
-    window.Alpine.data('heroCarousel', heroCarousel);
     window.Alpine.data('swipeDeck', swipeDeck);
     window.Alpine.data('installApp', installApp);
     window.Alpine.data('pushToggle', pushToggle);

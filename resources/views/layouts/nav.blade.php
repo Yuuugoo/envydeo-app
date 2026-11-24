@@ -1,10 +1,10 @@
 @php
     $navLinks = [
-        ['label' => 'Home', 'icon' => 'home', 'href' => route('movie.index'), 'active' => request()->routeIs('movie.index')],
-        ...(auth()->check() ? [['label' => 'Feed', 'icon' => 'users', 'href' => route('feed'), 'active' => request()->routeIs('feed', 'people', 'profile.show', 'profile.connections')]] : []),
+        ['label' => auth()->user()?->username ? 'Tonight' : 'Home', 'icon' => 'home', 'href' => route('movie.index'), 'active' => request()->routeIs('movie.index')],
+        ['label' => 'Movie Night', 'icon' => 'sparkles', 'href' => route('movie-night.index'), 'active' => request()->routeIs('movie-night.*')],
+        ...(auth()->check() ? [['label' => 'Friends', 'icon' => 'users', 'href' => route('feed'), 'active' => request()->routeIs('feed', 'people', 'profile.show', 'profile.connections')]] : []),
         ['label' => 'Movies', 'icon' => 'film', 'href' => route('movie.list'), 'active' => request()->routeIs('movie.list', 'movie.show')],
         ['label' => 'TV Shows', 'icon' => 'tv', 'href' => route('show.list'), 'active' => request()->routeIs('show.*')],
-        ['label' => 'Movie Night', 'icon' => 'sparkles', 'href' => route('movie-night.index'), 'active' => request()->routeIs('movie-night.*')],
     ];
     if (auth()->check()) {
         $navLinks[] = ['label' => 'Watchlist', 'icon' => 'bookmark', 'href' => route('watchlist.index'), 'active' => request()->routeIs('watchlist.*')];

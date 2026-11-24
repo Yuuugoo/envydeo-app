@@ -5,7 +5,7 @@
                 <x-logo />
             </a>
             <p class="mt-4 text-sm leading-relaxed text-gray-400">
-                Discover what's trending, keep a watchlist, and pick up right where you left off.
+                Pick tonight’s movie with friends, share what you’re watching, and keep track of what you all want to see.
             </p>
         </div>
 
@@ -13,6 +13,7 @@
             <h2 class="text-xs font-bold uppercase tracking-[0.18em] text-gray-500">Browse</h2>
             <ul class="mt-4 space-y-2.5 text-sm">
                 <li><a href="{{ route('movie.index') }}" class="text-gray-300 transition hover:text-brand-300">Home</a></li>
+                <li><a href="{{ route('movie-night.index') }}" class="text-gray-300 transition hover:text-brand-300">Movie Night</a></li>
                 <li><a href="{{ route('movie.list') }}" class="text-gray-300 transition hover:text-brand-300">Movies</a></li>
                 <li><a href="{{ route('show.list') }}" class="text-gray-300 transition hover:text-brand-300">TV Shows</a></li>
             </ul>
@@ -39,6 +40,7 @@
                 Movie &amp; TV data from
                 <a href="https://www.themoviedb.org/" target="_blank" rel="noopener" class="font-semibold text-gray-400 hover:text-brand-300">TMDB</a>.
                 This product uses the TMDB API but is not endorsed or certified by TMDB.
+                <a href="https://db-ip.com" target="_blank" rel="noopener" class="hover:text-brand-300">IP Geolocation by DB-IP</a>.
             </p>
         </div>
     </div>

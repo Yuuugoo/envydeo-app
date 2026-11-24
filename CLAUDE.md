@@ -69,7 +69,8 @@ resources/
     layouts/main.blade.php           main layout used by all site pages (@extends + @section('content'))
     layouts/app|guest.blade.php      Breeze component layouts (<x-app-layout>/<x-guest-layout>)
     layouts/nav.blade.php            top nav + DaisyUI mobile drawer; footer.blade.php
-    index.blade.php                  HOME: hero carousel, continue watching, popular, top rated, genre rows
+    index.blade.php                  HOME for visitors: Movie Night landing (demo deck, moods, most matched)
+    home/tonight.blade.php           HOME for signed-in users: Livewire social.tonight-home
     movies/index|details.blade.php   now-playing grid w/ pagination; movie page (where to watch, trailer, tabs)
     shows/index|details.blade.php    trending TV grid; show page (episodes by season, similar, images)
     results.blade.php                search results with media-type / sort filters
@@ -85,7 +86,7 @@ public/img/logo/                     Envydeo logos; public/build = Vite output (
 
 | Method | URI | Handler | Notes |
 |---|---|---|---|
-| GET | `/` | MovieController@index | name `movie.index`. Hero carousel cached 6h (`home:carousel`) |
+| GET | `/` | MovieController@index | name `movie.index`. Landing page for visitors, Tonight for signed-in users (see Home page) |
 | GET | `/movies?page=` | MovieController@list | `movie.list`, TMDB now_playing |
 | GET | `/movies/{id}` | MovieController@show | `movie.show`, numeric id, 404 if not found |
 | GET | `/movies/{id}/similar`, `/recommended`, `/images` | MovieController | JSON for the details-page tabs |
@@ -98,10 +99,20 @@ public/img/logo/                     Envydeo logos; public/build = Vite output (
 | GET | `/login/{provider}`, `/login/{provider}/envydeo/callback` | OAuthProviderController | guest only |
 | — | `/login`, `/register`, `/profile`, password/verify routes | Breeze | after auth → `movie.index` |
 
-## Home page (index.blade.php)
+## Home page: Movie Night first, not a streaming catalogue
 
-- **Hero:** rendered on the server from `$moviesWithDetails` (15 trending movies and shows). It uses Alpine `heroCarousel` (`resources/js/components/hero-carousel.js`): it **autoplays every 5s**, loops endlessly, and supports arrows, dots, keys and swipe. It pauses only while a video is open or the tab is hidden. Keep the autoplay; the owner wants it.
-- **Rows:** each row is one `<x-poster-row>`: Popular, Trending TV, Top Rated, the Movie Night promo, a "Discover by genre" banner with jump chips, then genre rows from the `$genreRows` array in the view.
+**Identity:** Envydeo is about deciding and watching *together tonight*. It is not a streaming library (Netflix) and not a film diary (Letterboxd). The owner chose (Nov 2026) to drop the autoplay backdrop carousel and genre rows for this reason. Don't bring back streaming-style heroes, "Play/Continue watching" language, star ratings or diary framing.
+
+`MovieController@index` serves two pages:
+- **Visitors** (and signed-in users without a username) get `index.blade.php`, the landing page:
+  - Hero copy plus a **playable demo deck**: `swipeDeck({ demo: true })`. Likes stay in the browser, and after 3 likes it shows "Swipe with friends". The cards come from `/trending/movie/week`, cached 6h (`home:demo-deck`).
+  - "How a movie night works", mood presets (`MovieNightThemes`, posting to `/movie-night/quick`), and a "Movie night doesn't end at the match" feature trio.
+  - **Most matched this week:** built from anonymous `matched` events, whose `meta.tmdb_id` is recorded in `Room`. It is cached 1h (`home:most-matched`) and needs at least 4 titles; otherwise one popular poster row is shown instead.
+- **Signed-in users with a username** get `home/tonight.blade.php`, which holds the Livewire `social.tonight-home`:
+  - Quick actions and the friends' live check-in strip.
+  - **"You both want to watch":** watchlist overlaps with the people you follow. `startNight()` creates a `source=watchlist` room and sends `MovieNightInvite` to those people; it is rate-limited.
+  - Your open rooms, a short "Lately with friends" slice of the feed, and one popular row.
+- Nav order is Tonight/Home, Movie Night, Friends (`/feed`), Movies, TV Shows. The mobile tab bar is Tonight, Movie Night, +, Friends, Profile.
 
 ## Movie Night Matcher (`/movie-night`), the signature feature
 
@@ -153,13 +164,18 @@ Friends swipe the same deck of movies, each on their own device. The first movie
   - Photos are stored on the private `local` disk and served only through `/check-ins/{id}/photo` to friends or moderators.
   - Reactions come from `CheckInReaction::REACTIONS`. "I'm in" (🙋) also adds the movie to the reactor's watchlist.
   - The composer is the global Livewire `social.check-in-composer`. Open it by dispatching `open-check-in`.
-- **Diary:** `DiaryEntry` ratings are 1–10, meaning half-stars (`<x-stars>`). It also holds a review, a spoiler flag and a watched date. `ReviewLike` stores likes on reviews.
+- **Verdicts (not star ratings):** each `DiaryEntry` has a `verdict` from `DiaryEntry::VERDICTS` (loved 😍 / good 👍 / meh 😐 / skip 👎), an optional `best_with_friends` tag (🍿), a short "take" (the `review` column), a spoiler flag and a watched date.
+  - The UI says "I watched this". `<x-verdict>` renders the pill, and `watchedWhen()` gives "tonight", "last night" or "on Monday".
+  - `ReviewLike` is shown as "🤝 Same" (agree).
+  - Title pages show "% recommend" (loved + good) with a breakdown bar and friends' verdicts.
+  - The 2026_11_24_120000 migration converted the old 1–10 ratings to verdicts.
+  - Profiles show Watched / Loved / Movie Night matches, an "Always down to watch" list of 4 picks (`top_films`), and a poster grid with verdict badges.
 - **Feed:** `App\Services\Feed` provides activities (people you follow plus yourself; `friends` visibility only for mutuals), the Tonight strip and suggestions. `Activity::record()` writes the activity rows.
 - **Movie & show pages:** `social.log-title`, a "Watching tonight" button and the lazy `social.title-social` component, which holds:
-  - Scores: TMDB, the Envydeo community, and OMDb's IMDb/RT/Metacritic when `OMDB_API_KEY` is set.
+  - "The verdict": Envydeo verdicts first, then TMDB, plus OMDb's IMDb/RT/Metacritic when `OMDB_API_KEY` is set.
   - Links to Letterboxd, IMDb and RT.
   - Friends who want to watch the title, with a "Start a movie night" invite.
-  - Review tabs.
+  - "Takes" tabs.
 - **Notifications:** Laravel database notifications plus web push (`laravel-notification-channels/webpush`). All of them extend `App\Notifications\SocialNotification`.
   - VAPID keys are in `.env`, generated with `php artisan webpush:vapid`. On Windows, first set `OPENSSL_CONF=C:\php83\extras\ssl\openssl.cnf`.
   - Push needs HTTPS in production. On iPhone it only works from the installed PWA.
@@ -178,6 +194,18 @@ Friends swipe the same deck of movies, each on their own device. The first movie
   - `<x-pagination>`, `<x-video-modal>` (teleported iframe modal), `<x-empty-state>`.
 - **Layouts:** `layouts/main` (`@extends`) and `layouts/app` / `layouts/guest` (Breeze components) share `layouts/partials/head`. The nav is `layouts/nav.blade.php`: fixed and transparent, turning solid on scroll, with a drawer below `lg`.
 - **Responsive targets:** verified at 360, 390, 768, 1024 and 1440px with no horizontal overflow.
+
+## "Where to watch" country & watchlist
+
+- **Country:** `App\Services\ViewerRegion::resolve()` decides it. Never hard-code `US`. The order is:
+  1. The `region` cookie, set by the picker in `<x-where-to-watch :regions>` via `POST /region` (`auto` clears it).
+  2. `CF-IPCountry`, only when the request came through a trusted proxy.
+  3. An **offline** GeoIP lookup of the IP: DB-IP Lite at `storage/app/geoip/dbip-country-lite.mmdb`, read with `maxmind-db/reader`. IPs are never sent anywhere or stored.
+  4. The browser language.
+  5. US.
+- **Countries offered:** the list comes from TMDB `/watch/providers/regions` (about 140, cached a week). Movie Night rooms still use the shorter `MovieNightDealer::REGIONS` via `resolveForMovieNight()`.
+- **GeoIP database:** download it with `php artisan envydeo:geoip`, which is scheduled monthly. Run it once on every new server. The credit "IP Geolocation by DB-IP" in the footer is required by the CC BY license.
+- **Watchlist:** it holds movies **and** TV, with `media_type` set to `movie` or `tv`. Use `Watchlist::movies()` wherever only movies make sense (Movie Night decks, "movie night with them"). `<livewire:add-watchlist :tmdb-id type="tv">`.
 
 ## Local development (Windows / XAMPP machine)
 

@@ -1,19 +1,49 @@
 <div class="space-y-6" id="reviews">
     {{-- ============================================================ SCORES --}}
     <section class="rounded-3xl bg-ink-900/70 p-6 ring-1 ring-white/5" aria-labelledby="scores-heading">
-        <h2 id="scores-heading" class="section-title">Scores</h2>
-        <dl class="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <h2 id="scores-heading" class="section-title">The verdict</h2>
+
+        {{-- Envydeo verdicts --}}
+        <div class="mt-5 rounded-2xl bg-gradient-to-br from-brand-600/15 to-transparent p-4 ring-1 ring-brand-500/20">
+            @if ($verdictTotal)
+                <div class="flex flex-wrap items-end justify-between gap-2">
+                    <p class="text-white"><span class="text-3xl font-extrabold">{{ $recommendPct }}%</span> <span class="text-sm font-semibold text-gray-300">on Envydeo recommend it</span></p>
+                    <p class="text-xs text-gray-500">{{ $verdictTotal }} {{ \Illuminate\Support\Str::plural('verdict', $verdictTotal) }}@if ($bestWithFriends) · 🍿 {{ $bestWithFriends }} say best with friends @endif</p>
+                </div>
+                @php $barColors = ['loved' => 'bg-rose-400', 'good' => 'bg-brand-400', 'meh' => 'bg-amber-300', 'skip' => 'bg-gray-500']; @endphp
+                <div class="mt-3 flex h-2.5 overflow-hidden rounded-full bg-white/5" aria-hidden="true">
+                    @foreach (\App\Models\DiaryEntry::VERDICTS as $key => $_)
+                        @if ($verdicts[$key] ?? 0)
+                            <span class="{{ $barColors[$key] }}" style="width: {{ 100 * $verdicts[$key] / $verdictTotal }}%"></span>
+                        @endif
+                    @endforeach
+                </div>
+                <ul class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-300">
+                    @foreach (\App\Models\DiaryEntry::VERDICTS as $key => [$emoji, $label])
+                        <li>{{ $emoji }} {{ $label }} <span class="font-bold text-white">{{ $verdicts[$key] ?? 0 }}</span></li>
+                    @endforeach
+                </ul>
+            @else
+                <p class="text-sm text-gray-300">No Envydeo verdicts yet. Watched it? Tap <strong class="text-white">I watched this</strong> above.</p>
+            @endif
+
+            @if ($friendVerdicts->isNotEmpty())
+                <div class="mt-4 flex flex-wrap items-center gap-2 border-t border-white/10 pt-4 text-sm text-gray-300">
+                    <span class="font-semibold text-white">Friends:</span>
+                    @foreach ($friendVerdicts->take(6) as $fv)
+                        <a href="{{ $fv->user->profileUrl() }}" class="flex items-center gap-1.5 rounded-full bg-white/5 py-0.5 pl-0.5 pr-2.5 ring-1 ring-white/10 hover:bg-white/10" title="{{ $fv->user->name }}: {{ $fv->verdictLabel() }}">
+                            <x-avatar :user="$fv->user" size="xs" /> <span aria-hidden="true">{{ $fv->verdictEmoji() }}</span><span class="sr-only">{{ $fv->user->name }}: {{ $fv->verdictLabel() }}</span>
+                        </a>
+                    @endforeach
+                </div>
+            @endif
+        </div>
+
+        <dl class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
             @if ($tmdbRating)
                 <div class="rounded-2xl bg-white/[0.03] p-4 ring-1 ring-white/5">
                     <dt class="text-xs font-semibold text-gray-400">TMDB</dt>
                     <dd class="mt-1 text-2xl font-extrabold text-white">{{ number_format($tmdbRating, 1) }}<span class="text-sm font-semibold text-gray-500">/10</span></dd>
-                </div>
-            @endif
-            @if ($communityCount)
-                <div class="rounded-2xl bg-brand-600/10 p-4 ring-1 ring-brand-500/20">
-                    <dt class="text-xs font-semibold text-brand-300">Envydeo</dt>
-                    <dd class="mt-1 text-2xl font-extrabold text-white">{{ number_format($communityAverage / 2, 1) }}<span class="text-sm font-semibold text-gray-500">/5</span></dd>
-                    <dd class="text-[11px] text-gray-500">{{ $communityCount }} {{ \Illuminate\Support\Str::plural('rating', $communityCount) }}</dd>
                 </div>
             @endif
             @foreach (['imdb' => ['IMDb', '/10'], 'rotten_tomatoes' => ['Rotten Tomatoes', ''], 'metacritic' => ['Metacritic', '']] as $key => [$label, $suffix])
@@ -48,9 +78,11 @@
                 <strong class="text-white">{{ $interested->take(2)->pluck('name')->implode(' & ') }}{{ $interested->count() > 2 ? ' and ' . ($interested->count() - 2) . ' more' : '' }}</strong>
                 {{ $interested->count() === 1 ? 'wants' : 'want' }} to watch this.
             </p>
-            <button type="button" wire:click="startMovieNight" class="btn-brand shrink-0" wire:loading.attr="disabled">
-                <x-icon name="sparkles" class="size-5" /> Start a movie night with them
-            </button>
+            @if ($type === 'movie')
+                <button type="button" wire:click="startMovieNight" class="btn-brand shrink-0" wire:loading.attr="disabled">
+                    <x-icon name="sparkles" class="size-5" /> Start a movie night with them
+                </button>
+            @endif
             @error('movieNight') <p class="basis-full text-sm text-red-300">{{ $message }}</p> @enderror
         </section>
     @endif
@@ -58,10 +90,7 @@
     {{-- ============================================================ REVIEWS --}}
     <section class="rounded-3xl bg-ink-900/70 p-6 ring-1 ring-white/5" aria-labelledby="reviews-heading">
         <div class="flex flex-wrap items-center justify-between gap-3">
-            <h2 id="reviews-heading" class="section-title">Reviews</h2>
-            @if ($friendAverage)
-                <p class="flex items-center gap-2 text-sm text-gray-400">Friends average <x-stars :value="round($friendAverage)" size="size-3.5" /></p>
-            @endif
+            <h2 id="reviews-heading" class="section-title">Takes</h2>
         </div>
 
         <nav class="mt-4 flex gap-1 border-b border-white/10" role="tablist">
@@ -82,7 +111,7 @@
                 @forelse ($everyone as $entry)
                     <livewire:social.review-card :entry-id="$entry->id" :show-title="false" :key="'ev-' . $entry->id" />
                 @empty
-                    <p class="py-6 text-center text-sm text-gray-500">No reviews on Envydeo yet. Be the first: tap “Log / Rate” above.</p>
+                    <p class="py-6 text-center text-sm text-gray-500">No takes on Envydeo yet. Be the first: tap “I watched this” above.</p>
                 @endforelse
             @else
                 @forelse ($tmdbReviews as $review)

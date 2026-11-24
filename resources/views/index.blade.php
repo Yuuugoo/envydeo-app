@@ -1,183 +1,221 @@
 @extends('layouts.main')
 
-@php
-    $slides = collect($moviesWithDetails)->values();
-    $genreRows = [
-        28 => 'Action',
-        16 => 'Animation',
-        35 => 'Comedy',
-        878 => 'Science Fiction',
-        27 => 'Horror',
-        10749 => 'Romance',
-        9648 => 'Mystery',
-        99 => 'Documentary',
-        36 => 'History',
-    ];
-@endphp
+@section('title', 'Pick tonight’s movie together')
 
 @section('content')
 
-{{-- ===================================================================== HERO --}}
-@if ($slides->isNotEmpty())
-    <section
-        x-data="heroCarousel({{ $slides->count() }})"
-        @touchstart.passive="touchStart($event)" @touchend.passive="touchEnd($event)"
-        @keydown.arrow-left="prev()" @keydown.arrow-right="next()"
-        class="relative isolate h-[80svh] min-h-[34rem] w-full overflow-hidden bg-ink-950 md:h-[88svh] md:max-h-[56rem]"
-        aria-roledescription="carousel" aria-label="Featured titles">
+{{-- ===================================================================== HERO: playable Movie Night demo --}}
+<section class="relative isolate overflow-hidden">
+    <div aria-hidden="true" class="absolute -left-40 -top-40 -z-10 size-[36rem] rounded-full bg-brand-600/25 blur-3xl"></div>
+    <div aria-hidden="true" class="absolute -right-32 top-32 -z-10 size-[30rem] rounded-full bg-fuchsia-600/15 blur-3xl"></div>
 
-        @foreach ($slides as $i => $slide)
-            @php
-                $isTv = $slide['media_type'] === 'TV';
-                $backdrop = 'https://image.tmdb.org/t/p/w1280' . $slide['backdrop_path'];
-                $year = !empty($slide['release_date']) ? substr($slide['release_date'], 0, 4) : null;
-                $length = $isTv
-                    ? (!empty($slide['number_of_seasons']) ? $slide['number_of_seasons'] . ' ' . \Illuminate\Support\Str::plural('Season', $slide['number_of_seasons']) : null)
-                    : (!empty($slide['runtime']) ? floor($slide['runtime'] / 60) . 'h ' . ($slide['runtime'] % 60) . 'm' : null);
-                $detailsUrl = route($isTv ? 'show.show' : 'movie.show', $slide['id']);
-            @endphp
+    <div class="shell page-top grid items-center gap-12 pb-16 lg:grid-cols-[minmax(0,1fr)_24rem] lg:gap-16 lg:pb-24">
+        <div class="max-w-2xl">
+            <p class="inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1 text-xs font-bold uppercase tracking-[0.16em] text-brand-200 ring-1 ring-white/10">
+                <x-icon name="sparkles" class="size-4" /> Movie night, solved
+            </p>
+            <h1 class="mt-5 text-balance text-5xl font-black leading-[0.98] tracking-tight text-white sm:text-6xl lg:text-7xl">
+                Stop scrolling.<br>
+                <span class="bg-gradient-to-r from-brand-300 via-emerald-200 to-sky-300 bg-clip-text text-transparent">Pick tonight’s movie together.</span>
+            </h1>
+            <p class="mt-6 max-w-xl text-lg leading-relaxed text-gray-300">
+                Everyone swipes the same deck on their own phone. The first movie you <em class="not-italic font-semibold text-white">all</em> like wins.
+                Then share what you’re watching with your friends, not the whole internet.
+            </p>
 
-            <div class="absolute inset-0 transition-opacity duration-700 ease-out"
-                 :class="current === {{ $i }} ? 'z-10 opacity-100' : 'pointer-events-none z-0 opacity-0'"
-                 :aria-hidden="current !== {{ $i }}"
-                 aria-roledescription="slide" aria-label="{{ $i + 1 }} of {{ $slides->count() }}">
-
-                <img @if ($i === 0) src="{{ $backdrop }}" fetchpriority="high" @else x-bind:src="loaded[{{ $i }}] ? '{{ $backdrop }}' : null" @endif
-                     alt="" class="absolute inset-0 size-full object-cover object-[center_25%]">
-
-                <div class="absolute inset-0 bg-gradient-to-t from-ink-950 via-ink-950/50 to-ink-950/10"></div>
-                <div class="absolute inset-0 hidden bg-gradient-to-r from-ink-950/95 via-ink-950/40 to-transparent md:block"></div>
-
-                <div class="shell relative flex h-full flex-col justify-end pb-24 md:pb-28">
-                    <div class="max-w-2xl">
-                        <span class="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.14em] text-brand-200 ring-1 ring-white/15 backdrop-blur">
-                            <x-icon :name="$isTv ? 'tv' : 'film'" class="size-3.5" />
-                            {{ $isTv ? 'TV Series' : 'Movie' }} · Trending
-                        </span>
-
-                        <h2 class="mt-4 text-balance text-4xl font-extrabold leading-[1.02] tracking-tight text-white drop-shadow-lg sm:text-5xl lg:text-6xl">
-                            {{ $slide['title'] }}
-                        </h2>
-
-                        <div class="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm font-medium text-gray-300">
-                            @if (!empty($slide['vote_average']))
-                                <span class="flex items-center gap-1 font-bold text-white"><x-icon name="star-solid" class="size-4 text-amber-400" />{{ number_format($slide['vote_average'], 1) }}</span>
-                            @endif
-                            @if ($year) <span>{{ $year }}</span> @endif
-                            @if ($length) <span class="text-gray-500">•</span><span>{{ $length }}</span> @endif
-                            @if (!empty($slide['genres']))
-                                <span class="text-gray-500">•</span>
-                                <span>{{ implode(', ', array_slice($slide['genres'], 0, 3)) }}</span>
-                            @endif
-                        </div>
-
-                        <p class="mt-4 line-clamp-3 max-w-xl text-sm leading-relaxed text-gray-300 md:text-base">
-                            {{ $slide['overview'] }}
-                        </p>
-
-                        <div class="mt-6 grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:gap-3">
-                            <a href="{{ $detailsUrl }}" class="btn-brand col-span-2 sm:col-span-1">
-                                <x-icon name="info" class="size-5" /> Details &amp; where to watch
-                            </a>
-
-                            @if (!empty($slide['trailer_key']))
-                                <button type="button" @click="openVideo('https://www.youtube.com/embed/{{ $slide['trailer_key'] }}?autoplay=1')" class="btn-glass">
-                                    <x-icon name="trailer" class="size-5" /> Trailer
-                                </button>
-                            @endif
-
-                            @unless ($isTv)
-                                <livewire:add-watchlist :tmdb-id="$slide['id']" :key="'hero-' . $slide['id']" />
-                            @endunless
-                        </div>
-                    </div>
-                </div>
-            </div>
-        @endforeach
-
-        {{-- Controls --}}
-        <div class="shell absolute inset-x-0 bottom-7 z-20 flex items-center justify-center gap-4 md:bottom-10 md:justify-end">
-            <button type="button" @click="prev()" aria-label="Previous slide"
-                    class="hidden size-11 place-items-center rounded-full bg-white/10 text-white ring-1 ring-white/15 backdrop-blur transition hover:bg-white/20 md:grid">
-                <x-icon name="chevron-left" class="size-5" />
-            </button>
-            <div class="flex items-center gap-1.5">
-                @foreach ($slides as $i => $slide)
-                    <button type="button" @click="go({{ $i }})" aria-label="Go to slide {{ $i + 1 }}"
-                            class="h-1.5 rounded-full transition-all duration-300"
-                            :class="current === {{ $i }} ? 'w-7 bg-brand-400' : 'w-1.5 bg-white/40 hover:bg-white/70'"></button>
-                @endforeach
-            </div>
-            <button type="button" @click="next()" aria-label="Next slide"
-                    class="hidden size-11 place-items-center rounded-full bg-white/10 text-white ring-1 ring-white/15 backdrop-blur transition hover:bg-white/20 md:grid">
-                <x-icon name="chevron-right" class="size-5" />
-            </button>
-        </div>
-
-        <x-video-modal show="video" src="video" close="closeVideo()" />
-    </section>
-@endif
-
-{{-- ===================================================================== ROWS --}}
-<div class="relative z-20 {{ $slides->isNotEmpty() ? '-mt-6 md:-mt-10' : 'page-top' }}">
-    <div class="shell space-y-10 md:space-y-14">
-        <x-poster-row title="Popular Movies" url="/api/movies/popular" :genres="$genres" :href="route('movie.list')" />
-        <x-poster-row title="Trending TV Shows" url="/api/tv/popular" data-key="shows" type="tv" :genres="$tvGenres" :href="route('show.list')" />
-        <x-poster-row title="Top Rated" url="/api/movies/top-rated" :genres="$genres" />
-
-        {{-- Movie Night promo --}}
-        <section class="group relative isolate flex flex-col gap-6 overflow-hidden rounded-3xl bg-gradient-to-br from-brand-700/40 via-ink-900 to-fuchsia-900/30 p-6 ring-1 ring-white/10 sm:p-10 md:flex-row md:items-center md:justify-between">
-            <div aria-hidden="true" class="absolute -right-16 -top-16 -z-10 size-64 rounded-full bg-brand-500/20 blur-3xl"></div>
-            <div class="max-w-xl">
-                <p class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.18em] text-brand-300"><x-icon name="sparkles" class="size-4" /> New · Movie Night</p>
-                <h2 class="mt-3 text-2xl font-extrabold tracking-tight text-white md:text-4xl">Can’t decide what to watch?</h2>
-                <p class="mt-2 text-sm text-gray-300 md:text-base">Swipe solo and your first ♥ is tonight’s pick, or swipe with friends and the first one you all like wins.</p>
-            </div>
-            <div class="flex shrink-0 flex-wrap gap-3">
+            <div class="mt-8 flex flex-wrap gap-3">
+                <a href="{{ route('movie-night.index') }}" class="btn-brand !px-6 !py-3 text-base">
+                    <x-icon name="users" class="size-5" /> Start a room
+                </a>
                 <form method="POST" action="{{ route('movie-night.quick') }}">
                     @csrf
-                    <button type="submit" class="btn-brand"><x-icon name="sparkles" class="size-5" /> Decide for me</button>
+                    <button type="submit" class="btn-glass !px-6 !py-3 text-base"><x-icon name="sparkles" class="size-5" /> Decide for me</button>
                 </form>
-                <a href="{{ route('movie-night.index') }}" class="btn-glass"><x-icon name="users" class="size-5" /> With friends</a>
             </div>
-        </section>
-    </div>
-
-    {{-- Discover by genre --}}
-    <section
-        x-data="{ posters: [], async init() { try { const r = await fetch('/api/movies/collage'); const d = await r.json(); this.posters = (d.movies || []).map(m => m.poster_path).filter(Boolean).slice(0, 16); } catch (e) {} } }"
-        class="shell mt-16 md:mt-20" aria-labelledby="discover-heading">
-        <div class="relative isolate overflow-hidden rounded-3xl bg-ink-900 px-6 py-12 ring-1 ring-white/10 sm:px-10 md:py-16">
-            <div aria-hidden="true" class="absolute inset-0 -z-10 grid grid-cols-4 gap-1.5 opacity-25 sm:grid-cols-6 lg:grid-cols-8 [mask-image:linear-gradient(to_bottom,black,transparent)]">
-                <template x-for="poster in posters" :key="poster">
-                    <img :src="`https://image.tmdb.org/t/p/w185${poster}`" alt="" loading="lazy" class="aspect-[2/3] w-full object-cover">
-                </template>
-            </div>
-            <div aria-hidden="true" class="absolute inset-0 -z-10 bg-gradient-to-br from-ink-950/80 via-ink-950/60 to-brand-900/40"></div>
-
-            <div class="mx-auto max-w-2xl text-center">
-                <h2 id="discover-heading" class="text-3xl font-extrabold tracking-tight text-white md:text-5xl">
-                    Discover by <span class="bg-gradient-to-r from-brand-300 to-sky-300 bg-clip-text text-transparent">genre</span>
-                </h2>
-                <p class="mt-3 text-sm text-gray-300 md:text-lg">
-                    From heart-pounding action to spine-chilling horror — jump straight to what you’re in the mood for.
-                </p>
-            </div>
-
-            <div class="no-scrollbar -mx-6 mt-8 flex gap-2 overflow-x-auto px-6 sm:mx-0 sm:flex-wrap sm:justify-center sm:px-0">
-                @foreach ($genreRows as $id => $name)
-                    <a href="#genre-{{ $id }}" class="shrink-0 rounded-full bg-white/10 px-4 py-2 text-sm font-semibold text-gray-100 ring-1 ring-white/10 backdrop-blur transition hover:bg-brand-600 hover:ring-brand-400">
-                        {{ $name }}
-                    </a>
-                @endforeach
-            </div>
+            <p class="mt-4 text-sm text-gray-500">Free. No app store. Friends join with a code, no account needed.</p>
         </div>
-    </section>
 
-    <div class="shell mt-12 space-y-10 md:mt-16 md:space-y-14">
-        @foreach ($genreRows as $id => $name)
-            <x-poster-row id="genre-{{ $id }}" class="scroll-mt-24" :title="$name" :url="'/api/movies/genre/' . $id" :genres="$genres" />
+        {{-- Demo deck --}}
+        @if ($deck)
+            <div x-data="swipeDeck({ cards: @js($deck), genres: @js($genres), demo: true })"
+                 @keydown.arrow-left.window="decide(false)" @keydown.arrow-right.window="decide(true)"
+                 class="relative mx-auto w-full max-w-[19rem] lg:max-w-none">
+                <p class="mb-3 text-center text-sm font-semibold text-gray-400" x-show="!done && likes.length < 3">
+                    Try it: swipe right on anything you’d watch tonight
+                </p>
+
+                <div class="relative aspect-[2/3] w-full">
+                    <template x-if="upcoming && likes.length < 3">
+                        <div class="absolute inset-0 overflow-hidden rounded-3xl bg-ink-800 ring-1 ring-white/10" :style="`transform: scale(${nextScale}) translateY(10px)`">
+                            <img :src="poster(upcoming, 'w342')" alt="" class="size-full object-cover opacity-60">
+                        </div>
+                    </template>
+
+                    <template x-if="current && likes.length < 3">
+                        <div class="absolute inset-0 cursor-grab touch-none select-none overflow-hidden rounded-3xl bg-ink-800 shadow-2xl shadow-black/60 ring-1 ring-white/10 active:cursor-grabbing"
+                             :style="cardStyle"
+                             @pointerdown="pointerDown($event)" @pointermove="pointerMove($event)" @pointerup="pointerUp()" @pointercancel="pointerUp()">
+                            <img :src="poster(current, 'w500')" :alt="current.title" draggable="false" class="pointer-events-none size-full object-cover">
+                            <div class="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black via-black/70 to-transparent p-5 pt-20">
+                                <p class="text-xl font-extrabold leading-tight text-white" x-text="current.title"></p>
+                                <p class="mt-1 text-sm text-gray-300"><span x-text="current.year"></span> <span class="text-gray-400" x-text="genreNames(current)"></span></p>
+                            </div>
+                            <span class="pointer-events-none absolute left-5 top-6 -rotate-12 rounded-xl border-4 border-brand-400 px-3 py-1 text-2xl font-black uppercase text-brand-300" :style="`opacity: ${likeOpacity}`">Yes!</span>
+                            <span class="pointer-events-none absolute right-5 top-6 rotate-12 rounded-xl border-4 border-red-400 px-3 py-1 text-2xl font-black uppercase text-red-300" :style="`opacity: ${nopeOpacity}`">Nope</span>
+                        </div>
+                    </template>
+
+                    {{-- Result: what a room would do with these likes --}}
+                    <template x-if="done || likes.length >= 3">
+                        <div class="absolute inset-0 flex flex-col overflow-hidden rounded-3xl bg-ink-900 p-6 text-center ring-1 ring-brand-400/30">
+                            <p class="text-xs font-bold uppercase tracking-[0.16em] text-brand-300" x-text="likes.length ? 'Your shortlist' : 'Tough crowd'"></p>
+                            <div class="mt-4 flex flex-1 items-center justify-center -space-x-6">
+                                <template x-for="(card, i) in likes.slice(0, 3)" :key="card.id">
+                                    <img :src="poster(card, 'w185')" :alt="card.title" class="w-24 rounded-xl shadow-xl ring-2 ring-ink-900"
+                                         :class="['-rotate-6', 'z-10 -translate-y-2', 'rotate-6'][i]">
+                                </template>
+                            </div>
+                            <p class="mt-4 text-lg font-extrabold text-white"
+                               x-text="likes.length ? 'Now imagine your friends swiping too.' : 'Nothing grabbed you? Try a mood below.'"></p>
+                            <p class="mt-1 text-sm text-gray-400">In a room, the first movie <strong class="text-white">everyone</strong> likes is the match.</p>
+                            <a href="{{ route('movie-night.index') }}" class="btn-brand mt-5">Swipe with friends</a>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="mt-5 flex items-center justify-center gap-6" x-show="!done && likes.length < 3">
+                    <button type="button" @click="decide(false)" :disabled="leaving" aria-label="Nope"
+                            class="grid size-14 place-items-center rounded-full bg-ink-900 text-red-400 shadow-xl ring-1 ring-white/10 transition hover:scale-110 hover:bg-red-500 hover:text-white">
+                        <x-icon name="x" class="size-7" />
+                    </button>
+                    <span class="w-16 text-center text-xs font-semibold text-gray-500"><span x-text="likes.length"></span>/3 likes</span>
+                    <button type="button" @click="decide(true)" :disabled="leaving" aria-label="Yes, I’d watch it"
+                            class="grid size-14 place-items-center rounded-full bg-ink-900 text-brand-400 shadow-xl ring-1 ring-white/10 transition hover:scale-110 hover:bg-brand-600 hover:text-white">
+                        <x-icon name="heart-solid" class="size-7" />
+                    </button>
+                </div>
+            </div>
+        @endif
+    </div>
+</section>
+
+{{-- ===================================================================== HOW IT WORKS --}}
+<section class="shell" aria-labelledby="how-heading">
+    <h2 id="how-heading" class="text-3xl font-extrabold tracking-tight text-white md:text-4xl">How a movie night works</h2>
+    <ol class="mt-8 grid gap-4 md:grid-cols-3">
+        @foreach ([
+            ['1', 'Start a room', 'Pick a mood, your streaming services and a max runtime. Share the code or QR in the group chat.', 'share'],
+            ['2', 'Everyone swipes', 'Each person swipes the same deck on their own phone. No more “I don’t mind, you pick.”', 'heart-solid'],
+            ['3', 'It’s a match', 'The first movie everyone likes wins, with where to stream it. Out of cards? The host picks from your closest calls.', 'check'],
+        ] as [$n, $title, $text, $icon])
+            <li class="relative overflow-hidden rounded-3xl bg-ink-900/70 p-6 ring-1 ring-white/5">
+                <span aria-hidden="true" class="absolute -right-2 -top-6 text-[7rem] font-black leading-none text-white/[0.04]">{{ $n }}</span>
+                <span class="grid size-11 place-items-center rounded-2xl bg-brand-600/15 text-brand-300 ring-1 ring-brand-400/20"><x-icon :name="$icon" class="size-5" /></span>
+                <h3 class="mt-4 text-lg font-bold text-white">{{ $title }}</h3>
+                <p class="mt-1.5 text-sm leading-relaxed text-gray-400">{{ $text }}</p>
+            </li>
+        @endforeach
+    </ol>
+</section>
+
+{{-- ===================================================================== MOODS --}}
+<section class="shell mt-20" aria-labelledby="moods-heading">
+    <div class="flex flex-wrap items-end justify-between gap-4">
+        <div>
+            <h2 id="moods-heading" class="text-3xl font-extrabold tracking-tight text-white md:text-4xl">What’s the mood?</h2>
+            <p class="mt-2 text-gray-400">Tap one and swipe solo. Your first ♥ is tonight’s pick.</p>
+        </div>
+    </div>
+    <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        @foreach ($themes as $key => $theme)
+            <form method="POST" action="{{ route('movie-night.quick') }}">
+                @csrf
+                <input type="hidden" name="theme" value="{{ $key }}">
+                <button type="submit" class="group relative h-full w-full overflow-hidden rounded-2xl bg-gradient-to-br {{ $theme['accent'] }} to-ink-900 p-4 text-left ring-1 ring-white/10 transition hover:-translate-y-0.5 hover:ring-white/25">
+                    <x-icon :name="$theme['icon']" class="size-5 text-white/80" />
+                    <span class="mt-3 block font-bold text-white">{{ $theme['name'] }}</span>
+                    <span class="mt-0.5 block text-xs leading-snug text-gray-300">{{ $theme['tagline'] }}</span>
+                </button>
+            </form>
         @endforeach
     </div>
-</div>
+</section>
+
+{{-- ===================================================================== BEYOND PICKING --}}
+<section class="shell mt-24" aria-labelledby="social-heading">
+    <h2 id="social-heading" class="max-w-2xl text-3xl font-extrabold tracking-tight text-white md:text-4xl">Movie night doesn’t end at the match</h2>
+    <div class="mt-8 grid gap-4 lg:grid-cols-3">
+        {{-- Tonight --}}
+        <article class="flex flex-col rounded-3xl bg-ink-900/70 p-6 ring-1 ring-white/5">
+            <div aria-hidden="true" class="flex items-center gap-3">
+                @foreach (['AR' => 'from-brand-400 to-sky-400', 'BC' => 'from-fuchsia-400 to-amber-300', 'KL' => 'from-sky-400 to-brand-300'] as $initials => $ring)
+                    <span class="rounded-full bg-gradient-to-tr {{ $ring }} p-[3px]"><span class="grid size-12 place-items-center rounded-full bg-ink-800 text-xs font-bold text-white ring-2 ring-ink-950">{{ $initials }}</span></span>
+                @endforeach
+                <span class="grid size-12 place-items-center rounded-full border-2 border-dashed border-white/20 text-brand-300">+</span>
+            </div>
+            <h3 class="mt-6 text-xl font-bold text-white">Tonight</h3>
+            <p class="mt-1.5 text-sm leading-relaxed text-gray-400">Snap what you’re watching (the couch, the snacks, the screen). Only friends see it, and it’s gone in 24 hours. Friends react, or tap <strong class="text-white">🙋 I’m in</strong>.</p>
+        </article>
+
+        {{-- Verdicts --}}
+        <article class="flex flex-col rounded-3xl bg-ink-900/70 p-6 ring-1 ring-white/5">
+            <div aria-hidden="true" class="flex flex-wrap gap-2">
+                <x-verdict value="loved" /> <x-verdict value="good" /> <x-verdict value="meh" /> <x-verdict value="skip" />
+                <x-verdict value="" friends />
+            </div>
+            <h3 class="mt-6 text-xl font-bold text-white">Verdicts, not essays</h3>
+            <p class="mt-1.5 text-sm leading-relaxed text-gray-400">One tap to say how it was, plus “best with friends” for group picks. Your friends’ verdicts show up on every movie, right next to where to stream it.</p>
+        </article>
+
+        {{-- Us --}}
+        <article class="flex flex-col rounded-3xl bg-gradient-to-br from-rose-500/15 via-ink-900 to-ink-900 p-6 ring-1 ring-rose-400/15">
+            <div aria-hidden="true" class="flex items-center gap-2 text-3xl">💑 <span class="text-base font-bold text-rose-200">+ “Our matches”</span></div>
+            <h3 class="mt-6 text-xl font-bold text-white">An “Us” room for two</h3>
+            <p class="mt-1.5 text-sm leading-relaxed text-gray-400">For couples and roommates: swipe whenever you’re bored, and every movie you both like lands in a shared list for later.</p>
+        </article>
+    </div>
+</section>
+
+{{-- ===================================================================== WHAT PEOPLE MATCH ON --}}
+<section class="shell mt-24" aria-labelledby="matched-heading">
+    @if (count($mostMatched) >= 4)
+        <h2 id="matched-heading" class="section-title">Most matched this week</h2>
+        <ul class="no-scrollbar -mx-4 mt-5 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-6 sm:px-0">
+            @foreach (array_slice($mostMatched, 0, 6) as $i => $movie)
+                <li class="w-32 shrink-0 sm:w-auto">
+                    <a href="{{ route('movie.show', $movie['id']) }}" class="group relative block overflow-hidden rounded-2xl ring-1 ring-white/10">
+                        <img src="https://image.tmdb.org/t/p/w342{{ $movie['poster_path'] }}" alt="{{ $movie['title'] }}" loading="lazy" class="aspect-[2/3] w-full object-cover transition duration-500 group-hover:scale-105">
+                        <span class="absolute left-2 top-2 rounded-full bg-ink-950/85 px-2 py-0.5 text-xs font-black text-white ring-1 ring-white/15">#{{ $i + 1 }}</span>
+                        <span class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent px-2 pb-2 pt-8 text-[11px] font-semibold text-brand-200">❤ {{ $movie['matches'] }} {{ \Illuminate\Support\Str::plural('match', $movie['matches']) }}</span>
+                    </a>
+                </li>
+            @endforeach
+        </ul>
+    @else
+        <x-poster-row title="Popular to swipe on this week" url="/api/movies/popular" :genres="$genres" :href="route('movie.list')" />
+    @endif
+    <p class="mt-6 text-sm text-gray-500">
+        Looking for something specific?
+        <a href="{{ route('movie.list') }}" class="font-semibold text-gray-300 hover:text-white">Browse movies</a> ·
+        <a href="{{ route('show.list') }}" class="font-semibold text-gray-300 hover:text-white">TV shows</a> ·
+        <a href="{{ route('search.results') }}" class="font-semibold text-gray-300 hover:text-white">Search</a>
+    </p>
+</section>
+
+{{-- ===================================================================== FINAL CTA --}}
+<section class="shell mt-24">
+    <div class="relative isolate overflow-hidden rounded-[2rem] bg-gradient-to-br from-brand-700/50 via-ink-900 to-fuchsia-900/30 px-6 py-14 text-center ring-1 ring-white/10 sm:px-12">
+        <div aria-hidden="true" class="absolute -right-16 -top-16 -z-10 size-72 rounded-full bg-brand-500/25 blur-3xl"></div>
+        <h2 class="text-balance text-3xl font-black tracking-tight text-white md:text-5xl">Your group chat will thank you.</h2>
+        <p class="mx-auto mt-3 max-w-lg text-gray-300">Start a room in ten seconds. Make an account later to keep your friends, verdicts and matches.</p>
+        <div class="mt-8 flex flex-wrap justify-center gap-3">
+            <a href="{{ route('movie-night.index') }}" class="btn-brand !px-6 !py-3 text-base"><x-icon name="users" class="size-5" /> Start a room</a>
+            @guest
+                <a href="{{ route('register') }}" class="btn-glass !px-6 !py-3 text-base">Create an account</a>
+            @else
+                <a href="{{ route('welcome') }}" class="btn-glass !px-6 !py-3 text-base">Set up your profile</a>
+            @endguest
+        </div>
+    </div>
+</section>
 @endsection

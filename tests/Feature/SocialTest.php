@@ -125,7 +125,7 @@ class SocialTest extends TestCase
     public function test_private_profiles_hide_content_and_blocking_hides_everything(): void
     {
         [$ana, $priv] = [$this->user('ana'), $this->user('priv', private: true)];
-        DiaryEntry::create(['user_id' => $priv->id, 'tmdb_id' => 550, 'movie' => ['id' => 550, 'title' => 'Secret Pick', 'poster_path' => '/p.jpg'], 'rating' => 8, 'watched_on' => now()]);
+        DiaryEntry::create(['user_id' => $priv->id, 'tmdb_id' => 550, 'movie' => ['id' => 550, 'title' => 'Secret Pick', 'poster_path' => '/p.jpg'], 'verdict' => 'good', 'watched_on' => now()]);
 
         $this->actingAs($ana)->get('/@priv')->assertOk()->assertSee('This account is private')->assertDontSee('Secret Pick');
 
@@ -200,11 +200,14 @@ class SocialTest extends TestCase
         $this->follow($ben, $ana);
 
         Livewire::actingAs($ana)->test(LogTitle::class, ['tmdbId' => 550, 'type' => 'movie'])
-            ->call('start')->call('save')->assertHasErrors('rating') // needs a rating or words
-            ->set('rating', 9)->set('review', 'Rules 1 and 2.')->set('hasSpoilers', true)->call('save')->assertHasNoErrors();
+            ->call('start')->call('save')->assertHasErrors('verdict') // needs a verdict or words
+            ->set('verdict', 'awful')->call('save')->assertHasErrors('verdict') // only known verdicts
+            ->set('verdict', 'loved')->set('bestWithFriends', true)->set('review', 'Rules 1 and 2.')->set('hasSpoilers', true)
+            ->call('save')->assertHasNoErrors();
 
         $entry = DiaryEntry::firstOrFail();
-        $this->assertSame([9, 4.5, true], [$entry->rating, $entry->stars(), $entry->has_spoilers]);
+        $this->assertSame(['loved', '😍', true, true], [$entry->verdict, $entry->verdictEmoji(), $entry->best_with_friends, $entry->has_spoilers]);
+        $this->assertSame('tonight', $entry->watchedWhen());
         $this->assertTrue(app(Feed::class)->activities($ben)->contains('subject_id', $entry->id));
 
         Livewire::actingAs($ben)->test(ReviewCard::class, ['entryId' => $entry->id])->call('toggleLike');

@@ -38,7 +38,7 @@ class CreateRoom extends Component
     public function mount(?string $presetTheme = null, ?string $presetSource = null): void
     {
         $this->name = (string) (auth()->user()?->name ?? '');
-        $this->region = MovieNightDealer::regionFromLocale(request()->getPreferredLanguage());
+        $this->region = app(\App\Services\ViewerRegion::class)->resolveForMovieNight(request());
         $this->theme = MovieNightThemes::get($presetTheme) ? $presetTheme : null;
         $this->source = $presetSource === 'watchlist' && auth()->check() ? 'watchlist' : 'discover';
     }

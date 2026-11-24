@@ -5,10 +5,11 @@ namespace App\Livewire\Social;
 use App\Models\Activity;
 use App\Models\DiaryEntry;
 use App\Support\TitleSnapshot;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Locked;
 use Livewire\Component;
 
-/** "Log / Rate" on movie & TV pages: ½-star rating, optional review (with spoiler flag), watch date. */
+/** "Log it" on movie & TV pages: an Envydeo verdict, "best with friends" tag, optional take (with spoiler flag), watch date. */
 class LogTitle extends Component
 {
     #[Locked]
@@ -21,7 +22,9 @@ class LogTitle extends Component
 
     public ?int $editingId = null;
 
-    public int $rating = 0; // 0 = no rating, 1–10 = ½–5 stars
+    public ?string $verdict = null; // key of DiaryEntry::VERDICTS
+
+    public bool $bestWithFriends = false;
 
     public string $review = '';
 
@@ -47,7 +50,8 @@ class LogTitle extends Component
 
         $entry = $entryId ? DiaryEntry::where('user_id', $user->id)->findOrFail($entryId) : null;
         $this->editingId = $entry?->id;
-        $this->rating = $entry?->rating ?? 0;
+        $this->verdict = $entry?->verdict;
+        $this->bestWithFriends = $entry?->best_with_friends ?? false;
         $this->review = $entry?->review ?? '';
         $this->hasSpoilers = $entry?->has_spoilers ?? false;
         $this->watchedOn = ($entry?->watched_on ?? now())->toDateString();
@@ -63,14 +67,15 @@ class LogTitle extends Component
         abort_unless($user?->username, 403);
 
         $data = $this->validate([
-            'rating' => ['integer', 'between:0,10'],
+            'verdict' => ['nullable', Rule::in(array_keys(DiaryEntry::VERDICTS))],
+            'bestWithFriends' => ['boolean'],
             'review' => ['nullable', 'string', 'max:2000'],
             'hasSpoilers' => ['boolean'],
             'watchedOn' => ['required', 'date', 'before_or_equal:today', 'after:1900-01-01'],
         ]);
 
-        if (!$data['rating'] && !trim((string) $data['review'])) {
-            $this->addError('rating', 'Add a rating or a few words.');
+        if (!$data['verdict'] && !trim((string) $data['review'])) {
+            $this->addError('verdict', 'Pick a verdict or say a few words.');
 
             return;
         }
@@ -79,7 +84,8 @@ class LogTitle extends Component
         abort_unless($snapshot, 404);
 
         $attributes = [
-            'rating' => $data['rating'] ?: null,
+            'verdict' => $data['verdict'] ?: null,
+            'best_with_friends' => (bool) $data['bestWithFriends'],
             'review' => trim((string) $data['review']) ?: null,
             'has_spoilers' => (bool) $data['hasSpoilers'],
             'watched_on' => $data['watchedOn'],
@@ -90,7 +96,7 @@ class LogTitle extends Component
             DiaryEntry::where('user_id', $user->id)->findOrFail($this->editingId)->update($attributes);
         } else {
             $entry = DiaryEntry::create($attributes + ['user_id' => $user->id, 'tmdb_id' => $this->tmdbId, 'media_type' => $this->type]);
-            Activity::record($user, 'logged', $entry, ['movie' => $snapshot, 'rating' => $entry->rating]);
+            Activity::record($user, 'logged', $entry, ['movie' => $snapshot, 'verdict' => $entry->verdict]);
         }
 
         $this->open = false;

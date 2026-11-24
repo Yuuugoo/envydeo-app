@@ -26,9 +26,11 @@ class UserProfileController extends Controller
         if ($canView) {
             $diary = $owner->diaryEntries()->withCount('likes')->latest('watched_on')->latest()->limit(24)->get();
 
-            $ids = Watchlist::where('user_id', $owner->id)->latest()->limit(18)->pluck('tmdb_id');
-            $details = $tmdb->many($ids->mapWithKeys(fn ($id) => [$id => ["/movie/{$id}"]])->all(), Tmdb::DAY);
-            $watchlist = collect($details)->filter(fn ($m) => !empty($m['id']))->values();
+            $items = Watchlist::where('user_id', $owner->id)->latest()->limit(18)->get(['tmdb_id', 'media_type']);
+            $details = $tmdb->many($items->mapWithKeys(fn ($w) => [$w->media_type . '-' . $w->tmdb_id => [$w->tmdbPath()]])->all(), Tmdb::DAY);
+            $watchlist = $items
+                ->map(fn ($w) => ($d = $details[$w->media_type . '-' . $w->tmdb_id] ?? []) && !empty($d['id']) ? $d + ['media_type' => $w->media_type] : null)
+                ->filter()->values();
         }
         if ($isFriend) {
             $checkIns = CheckIn::where('user_id', $owner->id)->latest()->limit(18)->get();
@@ -45,8 +47,9 @@ class UserProfileController extends Controller
             'stats' => [
                 'followers' => count($graph->followerIds($owner)),
                 'following' => count($graph->followingIds($owner)),
-                'films' => $owner->diaryEntries()->count(),
-                'reviews' => $owner->diaryEntries()->whereNotNull('review')->count(),
+                'watched' => $owner->diaryEntries()->count(),
+                'loved' => $owner->diaryEntries()->where('verdict', 'loved')->count(),
+                'matches' => $owner->activities()->where('type', 'matched')->count(),
             ],
         ]);
     }

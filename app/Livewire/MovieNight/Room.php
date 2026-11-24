@@ -124,7 +124,7 @@ class Room extends Component
         if ($this->me($room)?->is_host && !$room->is_persistent && $room->status !== 'matched' && $room->candidate($tmdbId)) {
             $this->recordResult($room, $tmdbId);
             $room->update(['status' => 'matched', 'matched_tmdb_id' => $tmdbId]);
-            MovieNightEvent::record('matched', $room, ['how' => 'host_pick'] + $this->matchMeta($room));
+            MovieNightEvent::record('matched', $room, ['how' => 'host_pick', 'tmdb_id' => $tmdbId] + $this->matchMeta($room));
         }
     }
 
@@ -294,7 +294,7 @@ class Room extends Component
         if ($room->is_persistent) {
             $isNew = $this->recordResult($room, $tmdbId);
             if ($isNew) {
-                MovieNightEvent::record('matched', $room, ['how' => 'unanimous', 'kind' => 'us', 'participants' => $needed]);
+                MovieNightEvent::record('matched', $room, ['how' => 'unanimous', 'kind' => 'us', 'participants' => $needed, 'tmdb_id' => $tmdbId]);
             }
 
             return $isNew;
@@ -306,7 +306,7 @@ class Room extends Component
 
         if ($won) {
             $this->recordResult($room, $tmdbId);
-            MovieNightEvent::record('matched', $room, ['how' => 'unanimous'] + $this->matchMeta($room));
+            MovieNightEvent::record('matched', $room, ['how' => 'unanimous', 'tmdb_id' => $tmdbId] + $this->matchMeta($room));
         }
 
         return true;

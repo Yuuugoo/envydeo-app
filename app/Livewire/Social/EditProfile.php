@@ -8,7 +8,7 @@ use App\Support\TitleSnapshot;
 use Illuminate\Validation\Rule;
 use Livewire\Component;
 
-/** Social profile settings: username, bio, privacy and Top 4 films. */
+/** Social profile settings: username, bio, privacy and "Always down to watch" picks. */
 class EditProfile extends Component
 {
     public string $username = '';

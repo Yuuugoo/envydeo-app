@@ -61,7 +61,7 @@
 
         {{-- ============================================================ FEED --}}
         <section class="mt-10" aria-labelledby="feed-heading">
-            <h2 id="feed-heading" class="section-title">Friends’ activity</h2>
+            <h2 id="feed-heading" class="section-title">What friends are up to</h2>
             <div class="mt-5 space-y-4">
                 @forelse ($activities as $activity)
                     @include('livewire.social.partials.activity', ['activity' => $activity])

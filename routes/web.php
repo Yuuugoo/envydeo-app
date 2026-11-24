@@ -34,6 +34,16 @@ Route::get('/shows/{id}', [ShowsController::class, 'show'])->whereNumber('id')->
 
 Route::get('/search', [SearchController::class, 'results'])->name('search.results');
 
+// "Where to watch" country picker: remembered for a year; "auto" goes back to IP detection.
+Route::post('/region', function (\Illuminate\Http\Request $request, \App\Services\ViewerRegion $regions) {
+    $code = strtoupper((string) $request->input('region'));
+    $cookie = isset($regions->available()[$code])
+        ? cookie()->forever(\App\Services\ViewerRegion::COOKIE, $code)
+        : cookie()->forget(\App\Services\ViewerRegion::COOKIE);
+
+    return redirect()->to(url()->previous() . '#where-to-watch')->withCookie($cookie);
+})->middleware('throttle:30,1')->name('region.update');
+
 // Social
 Route::middleware('auth')->group(function () {
     Route::view('/welcome', 'social.welcome')->name('welcome');

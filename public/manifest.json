@@ -2,7 +2,7 @@
   "id": "/",
   "name": "Envydeo",
   "short_name": "Envydeo",
-  "description": "Discover movies, keep a watchlist, and pick what to watch with friends on Movie Night.",
+  "description": "Pick tonight’s movie with friends, share what you’re watching, and see what your friends thought.",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",

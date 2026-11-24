@@ -87,6 +87,7 @@
                     <a href="#episodes" @click="tab = 'episodes'" class="btn-glass">
                         <x-icon name="tv" class="size-5" /> Episodes
                     </a>
+                    <livewire:add-watchlist :tmdb-id="$tvShow['id']" type="tv" />
                     <livewire:social.log-title :tmdb-id="$tvShow['id']" type="tv" />
                     @auth
                         <button type="button" @click="$dispatch('open-check-in', { tmdbId: {{ $tvShow['id'] }}, type: 'tv' })" class="btn-glass">
@@ -111,7 +112,7 @@
             <p class="mt-4 max-w-3xl text-base leading-relaxed text-gray-300">{{ $tvShow['overview'] ?: 'No overview available.' }}</p>
         </section>
 
-        <x-where-to-watch :data="$whereToWatch" :region="$regionName" />
+        <x-where-to-watch :data="$whereToWatch" :region="$region" :regions="$regions" />
 
         <livewire:social.title-social :tmdb-id="$tvShow['id']" type="tv" :title="$tvShow['name']"
                                       :imdb-id="$tvShow['external_ids']['imdb_id'] ?? null" :tmdb-rating="(float) ($tvShow['vote_average'] ?? 0) ?: null" />

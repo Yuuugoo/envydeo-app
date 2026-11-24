@@ -41,8 +41,8 @@ class CheckInCard extends Component
 
         CheckInReaction::updateOrCreate(['check_in_id' => $checkIn->id, 'user_id' => $viewer->id], ['reaction' => $reaction]);
 
-        if ($reaction === 'in' && $checkIn->media_type === 'movie') {
-            Watchlist::firstOrCreate(['user_id' => $viewer->id, 'tmdb_id' => $checkIn->tmdb_id]);
+        if ($reaction === 'in') {
+            Watchlist::firstOrCreate(['user_id' => $viewer->id, 'tmdb_id' => $checkIn->tmdb_id, 'media_type' => $checkIn->media_type === 'tv' ? 'tv' : 'movie']);
         }
 
         $checkIn->user->notify(new CheckInReacted($viewer, $checkIn, $reaction));

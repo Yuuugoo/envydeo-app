@@ -2,8 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\MovieNightEvent;
 use App\Services\MovieNightDealer;
 use App\Services\Tmdb;
+use App\Services\ViewerRegion;
+use App\Support\MovieNightThemes;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
@@ -11,15 +14,68 @@ class MovieController extends Controller
 {
     public function __construct(private Tmdb $tmdb) {}
 
+    /**
+     * Home. Signed-in users with a profile get "Tonight" (friends, overlaps, rooms).
+     * Everyone else gets the landing page: a playable Movie Night demo deck, how it works,
+     * mood presets and what people matched on this week.
+     */
     public function index()
     {
-        $moviesWithDetails = Cache::remember('home:carousel', Tmdb::HOURS_6, fn () => $this->getVisuallyImpressiveMovies());
+        if (auth()->user()?->username) {
+            return view('home.tonight');
+        }
 
         return view('index', [
             'genres' => $this->tmdb->movieGenres(),
-            'tvGenres' => $this->tmdb->tvGenres(),
-            'moviesWithDetails' => $moviesWithDetails,
+            'deck' => Cache::remember('home:demo-deck', Tmdb::HOURS_6, fn () => $this->demoDeck()),
+            'mostMatched' => Cache::remember('home:most-matched', Tmdb::HOUR, fn () => $this->mostMatched()),
+            'themes' => MovieNightThemes::THEMES,
         ]);
+    }
+
+    /** 12 well-known trending movies with posters for the landing-page swipe demo. */
+    private function demoDeck(): array
+    {
+        return collect($this->tmdb->get('/trending/movie/week', [], Tmdb::HOURS_6)['results'] ?? [])
+            ->filter(fn ($m) => !empty($m['poster_path']) && ($m['vote_count'] ?? 0) >= 100)
+            ->take(12)
+            ->map(fn ($m) => [
+                'id' => $m['id'],
+                'title' => $m['title'] ?? '',
+                'poster_path' => $m['poster_path'],
+                'year' => substr($m['release_date'] ?? '', 0, 4),
+                'rating' => round($m['vote_average'] ?? 0, 1),
+                'genre_ids' => $m['genre_ids'] ?? [],
+            ])
+            ->values()->all();
+    }
+
+    /**
+     * Movies most often matched in Movie Night rooms over the last 7 days, from the
+     * anonymous `matched` events (only the TMDB id is used). Empty until there is data.
+     */
+    private function mostMatched(): array
+    {
+        $counts = MovieNightEvent::where('event', 'matched')->where('created_at', '>=', now()->subWeek())
+            ->pluck('meta')
+            ->map(fn ($meta) => (int) ($meta['tmdb_id'] ?? 0))
+            ->filter()
+            ->countBy()
+            ->sortDesc()
+            ->take(12);
+
+        if ($counts->isEmpty()) {
+            return [];
+        }
+
+        $details = $this->tmdb->many($counts->keys()->mapWithKeys(fn ($id) => [$id => ["/movie/{$id}"]])->all(), Tmdb::DAY);
+
+        return $counts->map(fn ($n, $id) => empty($details[$id]['id']) ? null : [
+            'id' => $id,
+            'title' => $details[$id]['title'] ?? '',
+            'poster_path' => $details[$id]['poster_path'] ?? null,
+            'matches' => $n,
+        ])->filter()->values()->all();
     }
 
     public function list()
@@ -36,13 +92,13 @@ class MovieController extends Controller
         ]);
     }
 
-    public function show($id, MovieNightDealer $dealer)
+    public function show($id, MovieNightDealer $dealer, ViewerRegion $regions)
     {
         $selectedMovie = $this->tmdb->get("/movie/{$id}", ['append_to_response' => 'credits,videos'], Tmdb::HOURS_6);
 
         abort_if(empty($selectedMovie['id']), 404);
 
-        $region = MovieNightDealer::regionFromLocale(request()->getPreferredLanguage());
+        $region = $regions->resolve(request());
 
         return view('movies.details', [
             'movie' => $selectedMovie,
@@ -51,7 +107,8 @@ class MovieController extends Controller
                 'genres' => collect($selectedMovie['genres'] ?? [])->pluck('name')->toArray(),
             ],
             'whereToWatch' => $dealer->whereToWatch((int) $id, $region),
-            'regionName' => MovieNightDealer::REGIONS[$region],
+            'region' => $region,
+            'regions' => $regions->available(),
         ]);
     }
 
@@ -74,74 +131,6 @@ class MovieController extends Controller
     public function getMovieImages($id)
     {
         return response()->json($this->tmdb->get("/movie/{$id}/images", [], Tmdb::DAY));
-    }
-
-    /**
-     * Trending movies + TV with backdrops for the home page hero carousel.
-     * 2 parallel trending calls, then up to 15 parallel detail calls.
-     */
-    private function getVisuallyImpressiveMovies(): Collection
-    {
-        $trending = $this->tmdb->many([
-            'movie' => ['/trending/movie/week'],
-            'tv' => ['/trending/tv/week'],
-        ], Tmdb::HOURS_6);
-
-        $allMedia = collect($trending['movie']['results'] ?? [])
-            ->map(fn ($m) => array_merge($m, ['media_type' => 'Movie']))
-            ->merge(collect($trending['tv']['results'] ?? [])->map(fn ($tv) => array_merge($tv, ['media_type' => 'TV'])))
-            ->filter(fn ($m) => ! empty($m['backdrop_path']))
-            ->shuffle()
-            ->take(15)
-            ->values();
-
-        $details = $this->tmdb->many(
-            $allMedia->mapWithKeys(fn ($m) => [
-                $m['media_type'].'-'.$m['id'] => [
-                    ($m['media_type'] === 'TV' ? '/tv/' : '/movie/').$m['id'],
-                    ['append_to_response' => 'videos,external_ids'],
-                ],
-            ])->all(),
-            Tmdb::DAY
-        );
-
-        return $allMedia->map(function ($media) use ($details) {
-            $detail = $details[$media['media_type'].'-'.$media['id']] ?? [];
-
-            if (empty($detail['id'])) {
-                return null;
-            }
-
-            $common = [
-                'id' => $media['id'],
-                'overview' => $media['overview'] ?? '',
-                'backdrop_path' => $media['backdrop_path'],
-                'poster_path' => $media['poster_path'] ?? null,
-                'vote_average' => $media['vote_average'] ?? 0,
-                'genres' => collect($detail['genres'] ?? [])->pluck('name')->toArray(),
-                'trailer_key' => collect($detail['videos']['results'] ?? [])->firstWhere('type', 'Trailer')['key'] ?? null,
-                'imdb_id' => $detail['external_ids']['imdb_id'] ?? null,
-            ];
-
-            if ($media['media_type'] === 'TV') {
-                return $common + [
-                    'title' => $media['name'] ?? $detail['name'] ?? '',
-                    'media_type' => 'TV',
-                    'release_date' => $media['first_air_date'] ?? $detail['first_air_date'] ?? null,
-                    'number_of_seasons' => $detail['number_of_seasons'] ?? null,
-                    'status' => $detail['status'] ?? null,
-                    'first_air_date' => $detail['first_air_date'] ?? null,
-                ];
-            }
-
-            return $common + [
-                'title' => $media['title'] ?? $detail['title'] ?? '',
-                'media_type' => 'Movie',
-                'release_date' => $media['release_date'] ?? $detail['release_date'] ?? null,
-                'runtime' => $detail['runtime'] ?? null,
-                'language' => $detail['original_language'] ?? 'en',
-            ];
-        })->filter()->values();
     }
 
     public function loadTopRatedMovies()

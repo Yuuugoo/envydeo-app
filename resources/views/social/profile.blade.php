@@ -5,12 +5,12 @@
 @push('meta')
     <meta property="og:type" content="profile">
     <meta property="og:title" content="{{ $owner->name }} ({{ '@' . $owner->username }}) on Envydeo">
-    <meta property="og:description" content="{{ $owner->bio ?: 'Films, reviews and movie nights on Envydeo.' }}">
+    <meta property="og:description" content="{{ $owner->bio ?: 'What they’re watching and matching on Envydeo.' }}">
 @endpush
 
 @php
     $topFilms = collect($owner->top_films ?? [])->take(4);
-    $tabs = array_filter(['diary' => 'Diary', 'watchlist' => 'Watchlist', 'tonight' => $isFriend ? 'Check-ins' : null]);
+    $tabs = array_filter(['diary' => 'Watched', 'watchlist' => 'Wants to watch', 'tonight' => $isFriend ? 'Tonights' : null]);
 @endphp
 
 @section('content')
@@ -50,7 +50,7 @@
                 @endif
 
                 <dl class="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-sm">
-                    @foreach ([['films', 'Films', null], ['reviews', 'Reviews', null], ['followers', 'Followers', 'followers'], ['following', 'Following', 'following']] as [$key, $label, $list])
+                    @foreach ([['watched', 'Watched', null], ['loved', 'Loved', null], ['matches', 'Movie Night matches', null], ['followers', 'Followers', 'followers'], ['following', 'Following', 'following']] as [$key, $label, $list])
                         <div>
                             @if ($list && $canView)
                                 <a href="{{ route('profile.connections', [$owner->username, $list]) }}" class="group">
@@ -77,12 +77,12 @@
 
         @if (!$canView)
             <x-empty-state icon="user" title="This account is private" class="mt-12"
-                           message="Follow {{ '@' . $owner->username }} to see their films, reviews and watchlist." />
+                           message="Follow {{ '@' . $owner->username }} to see what they watch and want to watch." />
         @else
-            {{-- Top 4 --}}
+            {{-- Always down to watch (the user's 4 picks) --}}
             @if ($topFilms->isNotEmpty())
                 <section class="mt-12" aria-labelledby="top4">
-                    <h2 id="top4" class="section-title">Top 4</h2>
+                    <h2 id="top4" class="section-title">Always down to watch</h2>
                     <ul class="mt-4 grid max-w-2xl grid-cols-4 gap-3 sm:gap-4">
                         @foreach ($topFilms as $film)
                             <li>
@@ -107,32 +107,28 @@
 
                 {{-- Diary --}}
                 <section x-show="tab === 'diary'" class="mt-6">
-                    @forelse ($diary as $entry)
-                        <article class="flex gap-4 border-b border-white/5 py-4">
-                            <a href="{{ $entry->titleUrl() }}" class="shrink-0">
-                                <img src="https://image.tmdb.org/t/p/w154{{ $entry->movie['poster_path'] ?? '' }}" alt="" class="w-16 rounded-lg ring-1 ring-white/10 sm:w-20">
-                            </a>
-                            <div class="min-w-0 flex-1">
-                                <a href="{{ $entry->titleUrl() }}" class="font-bold text-white hover:text-brand-300">{{ $entry->movie['title'] ?? '' }}</a>
-                                <span class="text-sm text-gray-500">{{ $entry->movie['year'] ?? '' }}</span>
-                                <div class="mt-1 flex flex-wrap items-center gap-x-3 text-xs text-gray-400">
-                                    @if ($entry->rating) <x-stars :value="$entry->rating" size="size-3.5" /> @endif
-                                    <span>Watched {{ $entry->watched_on->format('M j, Y') }}</span>
-                                    @if ($entry->likes_count) <span>♥ {{ $entry->likes_count }}</span> @endif
-                                </div>
-                                @if ($entry->review)
-                                    <div x-data="{ reveal: {{ $entry->has_spoilers ? 'false' : 'true' }} }" class="mt-2">
-                                        <p class="line-clamp-4 text-sm leading-relaxed text-gray-300 transition" :class="!reveal && 'select-none blur-sm'">{{ $entry->review }}</p>
-                                        @if ($entry->has_spoilers)
-                                            <button type="button" x-show="!reveal" @click="reveal = true" class="mt-1 text-xs font-semibold text-amber-300">Contains spoilers · show</button>
+                    @if ($diary->isNotEmpty())
+                        <ul class="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+                            @foreach ($diary as $entry)
+                                <li>
+                                    <a href="{{ $entry->titleUrl() }}" class="group relative block overflow-hidden rounded-xl ring-1 ring-white/10 transition hover:ring-brand-400/60" title="{{ $entry->movie['title'] ?? '' }}">
+                                        <img src="https://image.tmdb.org/t/p/w342{{ $entry->movie['poster_path'] ?? '' }}" alt="{{ $entry->movie['title'] ?? '' }}" loading="lazy" class="aspect-[2/3] w-full object-cover transition duration-500 group-hover:scale-105">
+                                        @if ($entry->verdict)
+                                            <span class="absolute left-1.5 top-1.5 grid size-8 place-items-center rounded-full bg-ink-950/80 text-lg ring-1 ring-white/15 backdrop-blur" title="{{ $entry->verdictLabel() }}">{{ $entry->verdictEmoji() }}</span>
                                         @endif
-                                    </div>
-                                @endif
-                            </div>
-                        </article>
-                    @empty
-                        <x-empty-state icon="film" title="No films logged yet" message="{{ $relation['self'] ? 'Rate a movie from its page and it shows up here.' : 'Nothing here yet.' }}" />
-                    @endforelse
+                                        @if ($entry->best_with_friends)
+                                            <span class="absolute right-1.5 top-1.5 grid size-8 place-items-center rounded-full bg-ink-950/80 text-base ring-1 ring-white/15 backdrop-blur" title="Best with friends">🍿</span>
+                                        @endif
+                                        @if ($entry->review)
+                                            <span class="absolute inset-x-0 bottom-0 line-clamp-2 bg-gradient-to-t from-black/90 to-transparent px-2 pb-2 pt-6 text-[11px] leading-snug text-white {{ $entry->has_spoilers ? 'blur-[3px]' : '' }}">“{{ $entry->review }}”</span>
+                                        @endif
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @else
+                        <x-empty-state icon="film" title="Nothing watched yet" message="{{ $relation['self'] ? 'Tap “I watched this” on any movie and give it a verdict.' : 'Nothing here yet.' }}" />
+                    @endif
                 </section>
 
                 {{-- Watchlist --}}

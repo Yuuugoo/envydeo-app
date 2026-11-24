@@ -3,10 +3,10 @@
     @php
         $me = auth()->user();
         $tabs = [
-            ['label' => 'Home', 'icon' => 'home', 'href' => route('movie.index'), 'active' => request()->routeIs('movie.index')],
-            ['label' => 'Feed', 'icon' => 'users', 'href' => route('feed'), 'active' => request()->routeIs('feed', 'people')],
-            null, // centre "+" (check in)
+            ['label' => 'Tonight', 'icon' => 'home', 'href' => route('movie.index'), 'active' => request()->routeIs('movie.index')],
             ['label' => 'Movie Night', 'icon' => 'sparkles', 'href' => route('movie-night.index'), 'active' => request()->routeIs('movie-night.*')],
+            null, // centre "+" (check in)
+            ['label' => 'Friends', 'icon' => 'users', 'href' => route('feed'), 'active' => request()->routeIs('feed', 'people')],
             ['label' => 'Profile', 'icon' => 'user', 'href' => route('profile.show', $me->username), 'active' => request()->routeIs('profile.show') && request()->route('username') === $me->username],
         ];
     @endphp

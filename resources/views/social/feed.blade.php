@@ -1,6 +1,6 @@
 @extends('layouts.main')
 
-@section('title', 'Feed')
+@section('title', 'Friends')
 
 @section('content')
 <div class="shell page-top pb-8">

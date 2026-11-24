@@ -14,7 +14,7 @@ class ReviewLiked extends SocialNotification
 
     protected function text(): string
     {
-        return 'liked your review of ' . ($this->entry->movie['title'] ?? 'a movie');
+        return 'agrees with your take on ' . ($this->entry->movie['title'] ?? 'a movie');
     }
 
     protected function url(): string

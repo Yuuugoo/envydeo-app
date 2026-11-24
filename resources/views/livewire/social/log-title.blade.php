@@ -1,59 +1,63 @@
 <div class="contents">
     @if ($latest)
-        <button type="button" wire:click="start({{ $latest->id }})" class="btn-glass !border-amber-400/30 w-full sm:w-auto" title="Edit your log">
-            @if ($latest->rating)
-                <x-stars :value="$latest->rating" size="size-4" />
+        <button type="button" wire:click="start({{ $latest->id }})" class="btn-glass w-full sm:w-auto" title="Edit your verdict">
+            @if ($latest->verdict)
+                <span aria-hidden="true">{{ $latest->verdictEmoji() }}</span> {{ $latest->verdictLabel() }}
             @else
-                <x-icon name="check" class="size-5" /> Logged
+                <x-icon name="check" class="size-5" /> Watched
             @endif
         </button>
-        <button type="button" wire:click="start" class="btn-glass w-full sm:w-auto">Log again</button>
+        <button type="button" wire:click="start" class="btn-glass w-full sm:w-auto">Watched again</button>
     @else
         <button type="button" wire:click="start" class="btn-glass w-full sm:w-auto">
-            <x-icon name="star-solid" class="size-5 text-amber-400" /> Log / Rate
+            <x-icon name="check" class="size-5 text-brand-300" /> I watched this
         </button>
     @endif
 
+    {{-- Teleported to <body>: the title hero is an `isolate` stacking context, which would
+         otherwise put this sheet underneath the mobile tab bar and hide the Save button. --}}
+    @teleport('body')
+    <div>
     @if ($open)
         <div class="fixed inset-0 z-[95] flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-labelledby="log-title"
              @keydown.escape.window="$wire.set('open', false)">
             <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" @click="$wire.set('open', false)"></div>
-            <form wire:submit="save" class="relative w-full max-w-md rounded-t-3xl bg-ink-900 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl ring-1 ring-white/10 sm:rounded-3xl sm:p-6">
-                <h2 id="log-title" class="text-lg font-extrabold text-white">{{ $editingId ? 'Edit your log' : 'Log it' }}</h2>
+            <form wire:submit="save" class="relative max-h-[92svh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-3xl bg-ink-900 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] shadow-2xl ring-1 ring-white/10 sm:rounded-3xl sm:p-6">
+                <h2 id="log-title" class="text-lg font-extrabold text-white">{{ $editingId ? 'Your verdict' : 'What’s the verdict?' }}</h2>
 
-                {{-- ½-star rating: each star has a left (½) and right (full) hit area --}}
-                <div class="mt-5" x-data="{ hover: 0, value: @entangle('rating') }">
-                    <p class="text-sm font-semibold text-gray-200">Rating</p>
-                    <div class="mt-2 flex items-center gap-3">
-                        <div class="flex" @mouseleave="hover = 0" role="radiogroup" aria-label="Rating out of 5 stars">
-                            @for ($i = 1; $i <= 5; $i++)
-                                <span class="relative size-10">
-                                    <svg class="size-10" viewBox="0 0 24 24" aria-hidden="true">
-                                        <defs><clipPath id="half-{{ $i }}"><rect x="0" y="0" width="12" height="24" /></clipPath></defs>
-                                        <path fill="rgba(255,255,255,.12)" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" />
-                                        <path fill="#fbbf24" x-show="(hover || value) >= {{ $i * 2 }}" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" />
-                                        <path fill="#fbbf24" clip-path="url(#half-{{ $i }})" x-show="(hover || value) === {{ $i * 2 - 1 }}" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z" />
-                                    </svg>
-                                    <button type="button" class="absolute inset-y-0 left-0 w-1/2" @mouseenter="hover = {{ $i * 2 - 1 }}" @click="value = value === {{ $i * 2 - 1 }} ? 0 : {{ $i * 2 - 1 }}" aria-label="{{ $i - 0.5 }} stars"></button>
-                                    <button type="button" class="absolute inset-y-0 right-0 w-1/2" @mouseenter="hover = {{ $i * 2 }}" @click="value = value === {{ $i * 2 }} ? 0 : {{ $i * 2 }}" aria-label="{{ $i }} stars"></button>
-                                </span>
-                            @endfor
-                        </div>
-                        <span class="text-sm font-semibold text-gray-300" x-text="(hover || value) ? ((hover || value) / 2) + ' / 5' : 'No rating'"></span>
+                {{-- Verdict: four big tap targets --}}
+                <fieldset class="mt-5">
+                    <legend class="sr-only">Verdict</legend>
+                    <div class="grid grid-cols-4 gap-2">
+                        @foreach (\App\Models\DiaryEntry::VERDICTS as $key => [$emoji, $label])
+                            <button type="button" wire:click="$set('verdict', {{ $verdict === $key ? 'null' : "'$key'" }})" aria-pressed="{{ $verdict === $key ? 'true' : 'false' }}"
+                                    class="flex flex-col items-center gap-1 rounded-2xl px-1 py-3 ring-1 transition {{ $verdict === $key ? 'scale-[1.03] bg-brand-600/20 ring-2 ring-brand-400' : 'bg-white/[0.04] ring-white/10 hover:bg-white/[0.08]' }}">
+                                <span class="text-3xl leading-none" aria-hidden="true">{{ $emoji }}</span>
+                                <span class="text-[11px] font-bold {{ $verdict === $key ? 'text-white' : 'text-gray-300' }}">{{ $label }}</span>
+                            </button>
+                        @endforeach
                     </div>
-                    <x-input-error :messages="$errors->get('rating')" class="mt-1" />
-                </div>
+                    <x-input-error :messages="$errors->get('verdict')" class="mt-2" />
+                </fieldset>
 
-                <div class="mt-5">
-                    <label for="review" class="text-sm font-semibold text-gray-200">Review <span class="font-normal text-gray-500">(optional)</span></label>
-                    <textarea id="review" wire:model="review" rows="4" maxlength="2000" placeholder="What did you think?"
+                <label class="mt-4 flex cursor-pointer items-center justify-between gap-3 rounded-2xl bg-white/[0.04] px-4 py-3 ring-1 ring-white/10">
+                    <span>
+                        <span class="block text-sm font-semibold text-white">🍿 Best with friends</span>
+                        <span class="block text-xs text-gray-400">A good pick for a group movie night</span>
+                    </span>
+                    <input type="checkbox" wire:model="bestWithFriends" class="toggle toggle-success toggle-sm">
+                </label>
+
+                <div class="mt-4">
+                    <label for="review" class="text-sm font-semibold text-gray-200">Your take <span class="font-normal text-gray-500">(optional)</span></label>
+                    <textarea id="review" wire:model="review" rows="3" maxlength="2000" placeholder="One line is plenty…"
                               class="mt-2 w-full resize-none rounded-xl bg-ink-800 px-4 py-3 text-white ring-1 ring-white/10 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500"></textarea>
                     <x-input-error :messages="$errors->get('review')" class="mt-1" />
                 </div>
 
                 <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
                     <label class="flex items-center gap-2 text-sm text-gray-300">
-                        <input type="checkbox" wire:model="hasSpoilers" class="checkbox checkbox-sm checkbox-warning"> Contains spoilers
+                        <input type="checkbox" wire:model="hasSpoilers" class="checkbox checkbox-sm checkbox-warning"> Spoilers
                     </label>
                     <label class="flex items-center gap-2 text-sm text-gray-300">
                         Watched
@@ -65,7 +69,7 @@
 
                 <div class="mt-6 flex gap-2">
                     @if ($editingId)
-                        <button type="button" wire:click="delete" wire:confirm="Delete this log?" class="btn-glass !text-red-300">Delete</button>
+                        <button type="button" wire:click="delete" wire:confirm="Delete this?" class="btn-glass !text-red-300">Delete</button>
                     @endif
                     <button type="button" @click="$wire.set('open', false)" class="btn-glass ml-auto">Cancel</button>
                     <button type="submit" class="btn-brand" wire:loading.attr="disabled">Save</button>
@@ -73,4 +77,6 @@
             </form>
         </div>
     @endif
+    </div>
+    @endteleport
 </div>

@@ -73,7 +73,7 @@
                         </button>
                     @endif
 
-                    <livewire:add-watchlist :tmdb-id="$movie['id']" />
+                    <livewire:add-watchlist :tmdb-id="$movie['id']" type="movie" />
                     <livewire:social.log-title :tmdb-id="$movie['id']" type="movie" />
                     @auth
                         <button type="button" @click="$dispatch('open-check-in', { tmdbId: {{ $movie['id'] }}, type: 'movie' })" class="btn-glass">
@@ -98,7 +98,7 @@
             <p class="mt-4 max-w-3xl text-base leading-relaxed text-gray-300">{{ $movie['overview'] ?: 'No overview available.' }}</p>
         </section>
 
-        <x-where-to-watch :data="$whereToWatch" :region="$regionName" />
+        <x-where-to-watch :data="$whereToWatch" :region="$region" :regions="$regions" />
 
         <livewire:social.title-social :tmdb-id="$movie['id']" type="movie" :title="$movie['title']"
                                       :imdb-id="$movie['imdb_id'] ?? null" :tmdb-rating="(float) ($movie['vote_average'] ?? 0) ?: null" />

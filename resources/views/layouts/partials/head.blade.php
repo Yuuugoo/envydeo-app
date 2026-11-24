@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <meta name="theme-color" content="#0a0e15">
-<meta name="description" content="Envydeo — discover and stream trending movies and TV shows.">
-<title>{{ $pageTitle ? $pageTitle . ' · Envydeo' : 'Envydeo — Movies & TV Shows' }}</title>
+<meta name="description" content="Envydeo: swipe with friends to pick tonight’s movie, then share what you’re watching.">
+<title>{{ $pageTitle ? $pageTitle . ' · Envydeo' : 'Envydeo — Pick tonight’s movie together' }}</title>
 <meta property="og:site_name" content="Envydeo">
 @stack('meta')
 

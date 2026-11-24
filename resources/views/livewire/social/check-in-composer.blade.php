@@ -38,7 +38,7 @@
                         <div>
                             <div class="relative">
                                 <x-icon name="search" class="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-gray-500" />
-                                <input type="search" wire:model.live.debounce.350ms="query" placeholder="Search movies & shows…" aria-label="Search a title"
+                                <input type="search" wire:model.live.debounce.350ms="query" @keydown.enter.prevent="$event.target.blur()" enterkeyhint="search" placeholder="Search movies & shows…" aria-label="Search a title"
                                        class="w-full rounded-xl bg-ink-800 py-3 pl-12 pr-4 text-white ring-1 ring-white/10 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-brand-500">
                             </div>
                             <x-input-error :messages="$errors->get('selected')" class="mt-2" />
@@ -87,8 +87,12 @@
                 </div>
 
                 <footer class="border-t border-white/5 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-                    <button type="submit" class="btn-brand w-full !py-3" wire:loading.attr="disabled" wire:target="share,photo" @disabled(!$selected)>
-                        <span wire:loading.remove wire:target="share">Share with friends</span>
+                    @unless ($selected)
+                        <p class="mb-2 text-center text-xs text-amber-300/90">Search and tap a poster to pick what you’re watching.</p>
+                    @endunless
+                    <button type="submit" class="btn-brand w-full !py-3 {{ $selected ? '' : 'opacity-60' }}" wire:loading.attr="disabled" wire:target="share,photo">
+                        <span wire:loading.remove wire:target="share,photo">Share with friends</span>
+                        <span wire:loading wire:target="photo" class="text-sm">Uploading photo…</span>
                         <span wire:loading wire:target="share" class="loading loading-spinner loading-sm"></span>
                     </button>
                 </footer>

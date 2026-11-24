@@ -27,12 +27,12 @@
     @if (count($movies))
         <div class="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
             @foreach ($movies as $movie)
-                <x-media-card :item="$movie" type="movie" />
+                <x-media-card :item="$movie" show-type />
             @endforeach
         </div>
     @else
         <x-empty-state icon="bookmark" title="Your watchlist is empty"
-                       message="Tap “Watchlist” on any movie to save it here for later.">
+                       message="Tap “Watchlist” on any movie or show to save it here for later.">
             <a href="{{ route('movie.index') }}" class="btn-brand">Browse movies</a>
         </x-empty-state>
     @endif

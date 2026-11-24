@@ -1,15 +1,18 @@
 /**
- * Movie Night swipe deck. Lives inside a Livewire component (`$wire.vote`).
+ * Movie Night swipe deck. Lives inside a Livewire component (`$wire.vote`),
+ * or runs standalone with `demo: true` (landing page: likes stay in `likes`).
  * Drag a card (mouse/touch/pen), tap the buttons, or use ← / → keys.
  * Votes are fire-and-forget so swiping never waits on the network; if a vote
  * completes a match we refresh the component to show the match screen.
  */
 const THRESHOLD = 110; // px of horizontal drag needed to decide
 
-export default ({ cards = [], genres = {}, persistent = false } = {}) => ({
+export default ({ cards = [], genres = {}, persistent = false, demo = false } = {}) => ({
     cards,
     genres,
     persistent, // "Us" rooms keep swiping after a match
+    demo, // landing-page demo: no server, likes are kept locally
+    likes: [],
     toast: null, // title of a fresh match, shown briefly in "Us" rooms
     index: 0,
     dx: 0,
@@ -79,18 +82,22 @@ export default ({ cards = [], genres = {}, persistent = false } = {}) => ({
         this.leaving = true;
         this.dx = (liked ? 1 : -1) * (window.innerWidth + 200);
 
-        // Send the vote without blocking the animation.
-        this.$wire
-            .vote(card.id, liked)
-            .then((result) => {
-                if (!result) return;
-                if (result.matched && this.persistent) {
-                    this.toast = result.title || 'New match';
-                    setTimeout(() => (this.toast = null), 3500);
-                }
-                if (result.refresh) this.$wire.$refresh();
-            })
-            .catch(() => {});
+        if (this.demo) {
+            if (liked) this.likes.push(card);
+        } else {
+            // Send the vote without blocking the animation.
+            this.$wire
+                .vote(card.id, liked)
+                .then((result) => {
+                    if (!result) return;
+                    if (result.matched && this.persistent) {
+                        this.toast = result.title || 'New match';
+                        setTimeout(() => (this.toast = null), 3500);
+                    }
+                    if (result.refresh) this.$wire.$refresh();
+                })
+                .catch(() => {});
+        }
 
         setTimeout(() => {
             this.snapping = true;

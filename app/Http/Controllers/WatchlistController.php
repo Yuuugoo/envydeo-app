@@ -16,15 +16,17 @@ class WatchlistController extends Controller
             return redirect()->route('login')->with('error', 'Please login to view your watchlist.');
         }
 
-        $tmdbIds = Watchlist::where('user_id', $user->id)->latest()->pluck('tmdb_id');
+        $items = Watchlist::where('user_id', $user->id)->latest()->get(['tmdb_id', 'media_type']);
 
-        // All watchlist movies fetched in parallel (and cached for a day).
+        // Movies and shows fetched in parallel (and cached for a day), newest first.
         $details = $tmdb->many(
-            $tmdbIds->mapWithKeys(fn ($id) => [$id => ["/movie/{$id}"]])->all(),
+            $items->mapWithKeys(fn ($w) => [$w->media_type . '-' . $w->tmdb_id => [$w->tmdbPath()]])->all(),
             Tmdb::DAY
         );
 
-        $movies = collect($details)->filter(fn ($movie) => ! empty($movie['id']))->values()->all();
+        $movies = $items
+            ->map(fn ($w) => ($d = $details[$w->media_type . '-' . $w->tmdb_id] ?? []) && !empty($d['id']) ? $d + ['media_type' => $w->media_type] : null)
+            ->filter()->values()->all();
 
         return view('watchlist', compact('movies'));
     }

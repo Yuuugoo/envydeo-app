@@ -25,7 +25,7 @@ class MovieNightRooms
     {
         $source = $options['source'] ?? 'discover';
         $theme = $options['theme'] ?? null;
-        $filters = ($options['filters'] ?? []) + ['region' => 'US', 'genres' => [], 'providers' => []];
+        $filters = ($options['filters'] ?? []) + ['region' => app(ViewerRegion::class)->resolveForMovieNight(request()), 'genres' => [], 'providers' => []];
         $filters['theme'] = $theme;
         $persistent = (bool) ($options['persistent'] ?? false);
         $start = (bool) ($options['start'] ?? false);
@@ -112,7 +112,7 @@ class MovieNightRooms
     /** @return array<int, int> tmdb_id => number of these users who saved it */
     private function watchlistCounts(array $userIds): array
     {
-        return Watchlist::whereIn('user_id', $userIds)
+        return Watchlist::movies()->whereIn('user_id', $userIds)
             ->selectRaw('tmdb_id, count(*) as saves')
             ->groupBy('tmdb_id')
             ->pluck('saves', 'tmdb_id')

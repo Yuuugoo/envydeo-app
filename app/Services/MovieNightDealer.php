@@ -133,14 +133,6 @@ class MovieNightDealer
         ];
     }
 
-    /** Guess a sensible default region from the browser language (e.g. en-PH → PH). */
-    public static function regionFromLocale(?string $locale): string
-    {
-        $country = strtoupper((string) preg_replace('/^[a-z]{2,3}[_-]/i', '', (string) $locale));
-
-        return array_key_exists($country, self::REGIONS) ? $country : 'US';
-    }
-
     private function discoverQuery(array $filters): array
     {
         $providers = $filters['providers'] ?? [];

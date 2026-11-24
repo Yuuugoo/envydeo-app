@@ -29,9 +29,9 @@
             </span>
         </label>
 
-        {{-- Top 4 --}}
+        {{-- Always down to watch (4 picks) --}}
         <div>
-            <p class="text-sm font-semibold text-gray-200">Top 4 films</p>
+            <p class="text-sm font-semibold text-gray-200">Always down to watch <span class="font-normal text-gray-500">(4 picks)</span></p>
             <ul class="mt-3 grid grid-cols-4 gap-3">
                 @for ($i = 0; $i < 4; $i++)
                     <li class="relative">
