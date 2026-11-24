@@ -140,6 +140,32 @@ Friends swipe the same deck of movies, each on their own device. The first movie
 - **QR code:** `bacon/bacon-qr-code` renders an inline SVG in the lobby, and in "Us" rooms while waiting for the partner.
 - **Stats:** `movie_night_events` stores anonymous events with no names, emails, IPs or user ids. `/movie-night/stats` is gated by `view-movie-night-stats`, meaning emails listed in the `ADMIN_EMAILS` env var (`config/envydeo.php`).
 
+## Social layer (followers, Tonight check-ins, diary, feed)
+
+- **Privacy rules live in one place:** `App\Services\SocialGraph`, registered as a `scoped` singleton and memoised per request.
+  - Follows are Instagram-style. A follow of a private account is `pending` until it is accepted.
+  - **Friends** are mutual accepted follows.
+  - A block hides both people from each other and deletes follows in both directions.
+  - In tests, call `$this->app->forgetScopedInstances()` after changing follows or blocks directly in the DB.
+- **Username:** required for social pages through the `username` middleware (`EnsureUsername` → `/welcome`). Profiles live at `/@{username}`. `User::USERNAME_RULES` and `RESERVED_USERNAMES` hold the rules.
+- **Tonight (our take on Locket):** `CheckIn` holds a title, an optional photo and a caption, and expires after 24h.
+  - Check-ins are **friends-only**. Photos are re-encoded by `App\Services\CheckInPhotos` with GD, which strips EXIF/GPS and caps them at 1440px.
+  - Photos are stored on the private `local` disk and served only through `/check-ins/{id}/photo` to friends or moderators.
+  - Reactions come from `CheckInReaction::REACTIONS`. "I'm in" (🙋) also adds the movie to the reactor's watchlist.
+  - The composer is the global Livewire `social.check-in-composer`. Open it by dispatching `open-check-in`.
+- **Diary:** `DiaryEntry` ratings are 1–10, meaning half-stars (`<x-stars>`). It also holds a review, a spoiler flag and a watched date. `ReviewLike` stores likes on reviews.
+- **Feed:** `App\Services\Feed` provides activities (people you follow plus yourself; `friends` visibility only for mutuals), the Tonight strip and suggestions. `Activity::record()` writes the activity rows.
+- **Movie & show pages:** `social.log-title`, a "Watching tonight" button and the lazy `social.title-social` component, which holds:
+  - Scores: TMDB, the Envydeo community, and OMDb's IMDb/RT/Metacritic when `OMDB_API_KEY` is set.
+  - Links to Letterboxd, IMDb and RT.
+  - Friends who want to watch the title, with a "Start a movie night" invite.
+  - Review tabs.
+- **Notifications:** Laravel database notifications plus web push (`laravel-notification-channels/webpush`). All of them extend `App\Notifications\SocialNotification`.
+  - VAPID keys are in `.env`, generated with `php artisan webpush:vapid`. On Windows, first set `OPENSSL_CONF=C:\php83\extras\ssl\openssl.cnf`.
+  - Push needs HTTPS in production. On iPhone it only works from the installed PWA.
+- **Safety:** block, report (`Report`, rate-limited) and `/admin/reports` behind the `moderate` gate, which uses the same `ADMIN_EMAILS` as stats.
+- Tests are in `tests/Feature/SocialTest.php`.
+
 ## UI system (Tailwind 4 + DaisyUI 5)
 
 - **Theme and tokens:** `resources/css/app.css` defines a single dark DaisyUI theme `envydeo` (`data-theme` on `<html>`). Tokens are `brand-*` (logo green), `ink-*` (surfaces) and the Figtree font. Utilities: `shell` (page container), `page-top` (clears the fixed nav), `section-title`, `btn-brand`, `btn-glass`, `no-scrollbar`.

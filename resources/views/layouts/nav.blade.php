@@ -1,6 +1,7 @@
 @php
     $navLinks = [
         ['label' => 'Home', 'icon' => 'home', 'href' => route('movie.index'), 'active' => request()->routeIs('movie.index')],
+        ...(auth()->check() ? [['label' => 'Feed', 'icon' => 'users', 'href' => route('feed'), 'active' => request()->routeIs('feed', 'people', 'profile.show', 'profile.connections')]] : []),
         ['label' => 'Movies', 'icon' => 'film', 'href' => route('movie.list'), 'active' => request()->routeIs('movie.list', 'movie.show')],
         ['label' => 'TV Shows', 'icon' => 'tv', 'href' => route('show.list'), 'active' => request()->routeIs('show.*')],
         ['label' => 'Movie Night', 'icon' => 'sparkles', 'href' => route('movie-night.index'), 'active' => request()->routeIs('movie-night.*')],
@@ -55,6 +56,9 @@
 
         <div class="ml-auto flex items-center gap-1.5 sm:gap-2">
             <livewire:search-dropdown />
+            @if (auth()->user()?->username)
+                <livewire:social.notification-bell />
+            @endif
 
             @auth
                 <div class="hidden lg:block">

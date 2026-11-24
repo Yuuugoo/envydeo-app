@@ -4,6 +4,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\MovieController;
 use App\Http\Controllers\MovieNightController;
 use App\Http\Controllers\MovieNightStatsController;
+use App\Http\Controllers\CheckInPhotoController;
+use App\Http\Controllers\PushSubscriptionController;
+use App\Http\Controllers\UserProfileController;
 use App\Http\Controllers\ShowsController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ProfileController;
@@ -30,6 +33,24 @@ Route::get('/shows', [ShowsController::class, 'list'])->name('show.list');
 Route::get('/shows/{id}', [ShowsController::class, 'show'])->whereNumber('id')->name('show.show');
 
 Route::get('/search', [SearchController::class, 'results'])->name('search.results');
+
+// Social
+Route::middleware('auth')->group(function () {
+    Route::view('/welcome', 'social.welcome')->name('welcome');
+    Route::get('/check-ins/{checkIn}/photo', CheckInPhotoController::class)->name('check-ins.photo');
+
+    Route::middleware('username')->group(function () {
+        Route::view('/feed', 'social.feed')->name('feed');
+        Route::view('/people', 'social.people')->name('people');
+        Route::view('/notifications', 'social.notifications')->name('notifications.index');
+        Route::post('/push-subscriptions', [PushSubscriptionController::class, 'store'])->middleware('throttle:20,1')->name('push.store');
+        Route::delete('/push-subscriptions', [PushSubscriptionController::class, 'destroy'])->name('push.destroy');
+        Route::view('/admin/reports', 'social.admin-reports')->middleware('can:moderate')->name('admin.reports');
+    });
+});
+Route::get('/@{username}', [UserProfileController::class, 'show'])->where('username', '[a-z0-9_.]+')->name('profile.show');
+Route::get('/@{username}/{list}', [UserProfileController::class, 'connections'])
+    ->where(['username' => '[a-z0-9_.]+', 'list' => 'followers|following'])->name('profile.connections');
 
 // Movie Night Matcher
 Route::prefix('movie-night')->name('movie-night.')->group(function () {

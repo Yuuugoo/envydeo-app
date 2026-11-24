@@ -87,6 +87,12 @@
                     <a href="#episodes" @click="tab = 'episodes'" class="btn-glass">
                         <x-icon name="tv" class="size-5" /> Episodes
                     </a>
+                    <livewire:social.log-title :tmdb-id="$tvShow['id']" type="tv" />
+                    @auth
+                        <button type="button" @click="$dispatch('open-check-in', { tmdbId: {{ $tvShow['id'] }}, type: 'tv' })" class="btn-glass">
+                            <x-icon name="sparkles" class="size-5" /> Watching tonight
+                        </button>
+                    @endauth
                 </div>
             </div>
         </div>
@@ -106,6 +112,9 @@
         </section>
 
         <x-where-to-watch :data="$whereToWatch" :region="$regionName" />
+
+        <livewire:social.title-social :tmdb-id="$tvShow['id']" type="tv" :title="$tvShow['name']"
+                                      :imdb-id="$tvShow['external_ids']['imdb_id'] ?? null" :tmdb-rating="(float) ($tvShow['vote_average'] ?? 0) ?: null" />
 
         @if ($cast->isNotEmpty())
             <section>

@@ -13,7 +13,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        // One social graph per request/job, so memoised follow lists never leak between requests.
+        $this->app->scoped(\App\Services\SocialGraph::class);
     }
 
     /**
@@ -21,11 +22,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        // Internal Movie Night funnel stats: only for emails listed in ADMIN_EMAILS.
-        Gate::define('view-movie-night-stats', fn (User $user) => in_array(
-            strtolower($user->email),
-            config('envydeo.admin_emails', []),
-            true
-        ));
+        // Admins = emails listed in ADMIN_EMAILS: Movie Night stats and the reports/moderation queue.
+        $isAdmin = fn (User $user) => in_array(strtolower($user->email), config('envydeo.admin_emails', []), true);
+        Gate::define('view-movie-night-stats', $isAdmin);
+        Gate::define('moderate', $isAdmin);
     }
 }

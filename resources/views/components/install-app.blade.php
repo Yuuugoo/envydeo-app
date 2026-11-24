@@ -9,7 +9,7 @@
     <div x-show="showBanner"
          x-transition:enter="transition ease-out-soft duration-300" x-transition:enter-start="translate-y-6 opacity-0" x-transition:enter-end="translate-y-0 opacity-100"
          x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="translate-y-4 opacity-0"
-         class="fixed inset-x-3 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-[70] sm:inset-x-auto sm:right-5 sm:w-[24rem]"
+         class="fixed inset-x-3 z-[70] sm:inset-x-auto sm:right-5 sm:w-[24rem] {{ auth()->user()?->username ? 'bottom-[calc(4.75rem+env(safe-area-inset-bottom))] lg:bottom-5' : 'bottom-[max(0.75rem,env(safe-area-inset-bottom))]' }}"
          role="dialog" aria-label="Install Envydeo">
         <div class="flex items-center gap-3.5 rounded-2xl bg-ink-900/95 p-3.5 shadow-2xl shadow-black/60 ring-1 ring-white/10 backdrop-blur-xl">
             <img src="/icons/icon-192.png" alt="" class="size-12 shrink-0 rounded-xl ring-1 ring-white/10">

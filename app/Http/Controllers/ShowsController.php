@@ -25,7 +25,7 @@ class ShowsController extends Controller
 
     public function show($id, MovieNightDealer $dealer)
     {
-        $selectedTV = $this->tmdb->get("/tv/{$id}", ['append_to_response' => 'credits,videos,images'], Tmdb::HOURS_6);
+        $selectedTV = $this->tmdb->get("/tv/{$id}", ['append_to_response' => 'credits,videos,images,external_ids'], Tmdb::HOURS_6);
 
         abort_if(empty($selectedTV['id']), 404);
 

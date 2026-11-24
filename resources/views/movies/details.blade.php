@@ -74,6 +74,12 @@
                     @endif
 
                     <livewire:add-watchlist :tmdb-id="$movie['id']" />
+                    <livewire:social.log-title :tmdb-id="$movie['id']" type="movie" />
+                    @auth
+                        <button type="button" @click="$dispatch('open-check-in', { tmdbId: {{ $movie['id'] }}, type: 'movie' })" class="btn-glass">
+                            <x-icon name="sparkles" class="size-5" /> Watching tonight
+                        </button>
+                    @endauth
 
                     @if ($trailer)
                         <x-video-modal show="trailerOpen" src="'https://www.youtube.com/embed/{{ $trailer['key'] }}?autoplay=1'" close="trailerOpen = false" label="Trailer" />
@@ -93,6 +99,9 @@
         </section>
 
         <x-where-to-watch :data="$whereToWatch" :region="$regionName" />
+
+        <livewire:social.title-social :tmdb-id="$movie['id']" type="movie" :title="$movie['title']"
+                                      :imdb-id="$movie['imdb_id'] ?? null" :tmdb-rating="(float) ($movie['vote_average'] ?? 0) ?: null" />
 
         @if ($cast->isNotEmpty())
             <section>

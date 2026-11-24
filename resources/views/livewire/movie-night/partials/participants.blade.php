@@ -26,4 +26,23 @@
             </li>
         @endforeach
     </ul>
+
+    @if (($invitable ?? collect())->isNotEmpty())
+        <div class="mt-5 border-t border-white/5 pt-4">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-gray-500">Invite friends</h3>
+            <ul class="mt-3 space-y-2">
+                @foreach ($invitable as $friend)
+                    <li class="flex items-center gap-3" wire:key="inv-{{ $friend->id }}">
+                        <x-avatar :user="$friend" size="sm" />
+                        <span class="min-w-0 flex-1 truncate text-sm text-gray-200">{{ $friend->name }}</span>
+                        @if (in_array($friend->id, $invited, true))
+                            <span class="text-xs font-semibold text-brand-300">Invited ✓</span>
+                        @else
+                            <button type="button" wire:click="inviteFriend('{{ $friend->id }}')" class="btn-glass !px-3 !py-1 text-xs">Invite</button>
+                        @endif
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 </aside>

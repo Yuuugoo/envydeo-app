@@ -9,7 +9,7 @@
  *
  * Bump VERSION to force clients onto a fresh cache after changing this file.
  */
-const VERSION = 'v1';
+const VERSION = 'v2';
 const SHELL_CACHE = `envydeo-shell-${VERSION}`;
 const RUNTIME_CACHE = `envydeo-runtime-${VERSION}`;
 const RUNTIME_MAX_ENTRIES = 300;
@@ -66,17 +66,20 @@ self.addEventListener('fetch', (event) => {
     // Anything else falls through to the network untouched.
 });
 
-// ---- Push notifications (server sends JSON: {title, body, url, tag}) --------------------------
+// ---- Push notifications ------------------------------------------------------------------------
+// Payload from Laravel's WebPushMessage: {title, body, icon, badge, tag, data: {url}}
 self.addEventListener('push', (event) => {
-    let data = {};
-    try { data = event.data ? event.data.json() : {}; } catch (e) { data = { body: event.data && event.data.text() }; }
+    let payload = {};
+    try { payload = event.data ? event.data.json() : {}; } catch (e) { payload = { body: event.data && event.data.text() }; }
 
-    event.waitUntil(self.registration.showNotification(data.title || 'Envydeo', {
-        body: data.body || '',
-        icon: '/icons/icon-192.png',
-        badge: '/icons/icon-192.png',
-        tag: data.tag,
-        data: { url: data.url || '/' },
+    const url = payload.data?.url || payload.url || '/';
+    event.waitUntil(self.registration.showNotification(payload.title || 'Envydeo', {
+        body: payload.body || '',
+        icon: payload.icon || '/icons/icon-192.png',
+        badge: payload.badge || '/icons/icon-192.png',
+        tag: payload.tag,
+        renotify: Boolean(payload.tag),
+        data: { url },
     }));
 });
 

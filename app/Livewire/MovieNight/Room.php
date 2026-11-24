@@ -178,6 +178,24 @@ class Room extends Component
         $result->update(['watched_at' => $result->watched_at ? null : now()]);
     }
 
+    /** Social: invite a mutual friend straight into this room (notification + push). Once per friend per hour. */
+    public function inviteFriend(string $userId, \App\Services\SocialGraph $graph): void
+    {
+        $room = $this->room();
+        $viewer = auth()->user();
+        if (!$viewer || !$this->me($room) || !$graph->areFriends($viewer, $friend = \App\Models\User::findOrFail($userId))) {
+            return;
+        }
+
+        if (\Illuminate\Support\Facades\Cache::add("mn-invite:{$room->id}:{$friend->id}", true, 3600)) {
+            $friend->notify(new \App\Notifications\MovieNightInvite($viewer, $room));
+        }
+        $this->invited[] = $friend->id;
+    }
+
+    /** @var list<string> friends invited during this visit (for the button state) */
+    public array $invited = [];
+
     /** Anonymous funnel stats for invites and share cards. */
     #[Renderless]
     public function trackShare(string $what, string $channel): void
@@ -224,7 +242,22 @@ class Room extends Component
             'shareUrl' => route('movie-night.show', $room->code),
             'qrSvg' => $status === 'lobby' || $room->is_persistent ? $this->qrSvg(route('movie-night.show', $room->code)) : null,
             'regionName' => MovieNightDealer::REGIONS[$room->filters['region'] ?? 'US'] ?? null,
+            'invitable' => $this->invitableFriends($room, $participants),
         ]);
+    }
+
+    /** Mutual friends of the signed-in viewer who aren't in the room yet (lobby / "Us" waiting). */
+    private function invitableFriends(MatchRoom $room, $participants)
+    {
+        $viewer = auth()->user();
+        if (!$viewer?->username || $participants->count() >= $room->maxParticipants() || $room->status === 'matched') {
+            return collect();
+        }
+        $graph = app(\App\Services\SocialGraph::class);
+        $inRoom = $participants->pluck('user_id')->filter()->all();
+
+        return \App\Models\User::whereIn('id', array_diff($graph->friendIds($viewer), $graph->hiddenIds($viewer), $inRoom))
+            ->orderBy('name')->limit(12)->get();
     }
 
     // ---------------------------------------------------------------- helpers
@@ -282,10 +315,21 @@ class Room extends Component
     /** Saves the match; returns true if it wasn't already recorded. */
     private function recordResult(MatchRoom $room, int $tmdbId): bool
     {
-        return MatchResult::firstOrCreate(
+        $card = $room->candidate($tmdbId) ?? ['id' => $tmdbId];
+        $isNew = MatchResult::firstOrCreate(
             ['match_room_id' => $room->id, 'tmdb_id' => $tmdbId],
-            ['movie' => $room->candidate($tmdbId) ?? ['id' => $tmdbId]],
+            ['movie' => $card],
         )->wasRecentlyCreated;
+
+        // Social feed: "Ana matched on Dune at Movie Night" for each signed-in participant with a profile.
+        if ($isNew) {
+            $movie = ['id' => $tmdbId, 'type' => 'movie', 'title' => $card['title'] ?? 'a movie', 'poster_path' => $card['poster_path'] ?? null, 'backdrop_path' => $card['backdrop_path'] ?? null, 'year' => $card['year'] ?? null];
+            \App\Models\User::whereIn('id', $room->participants()->whereNotNull('user_id')->pluck('user_id'))
+                ->whereNotNull('username')->get()
+                ->each(fn ($user) => \App\Models\Activity::record($user, 'matched', null, ['movie' => $movie]));
+        }
+
+        return $isNew;
     }
 
     private function matchMeta(MatchRoom $room): array

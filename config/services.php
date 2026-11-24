@@ -39,6 +39,11 @@ return [
         'token' => env('TMDB_TOKEN'),
     ],
 
+    // IMDb / Rotten Tomatoes / Metacritic scores (free key at https://www.omdbapi.com/apikey.aspx)
+    'omdb' => [
+        'key' => env('OMDB_API_KEY'),
+    ],
+
     // OAuth Config
     'github' => [
         'client_id' => env('GITHUB_CLIENT_ID'),

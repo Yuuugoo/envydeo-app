@@ -26,9 +26,29 @@
             <p class="truncate text-xs text-gray-400">{{ $user->email }}</p>
         </div>
         <div class="p-1.5">
+            @if ($user->username)
+                <a href="{{ route('profile.show', $user->username) }}" role="menuitem" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-200 transition hover:bg-white/5 hover:text-white">
+                    <x-icon name="user" class="size-5 text-gray-400" /> My profile
+                </a>
+                <a href="{{ route('people') }}" role="menuitem" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-200 transition hover:bg-white/5 hover:text-white">
+                    <x-icon name="search" class="size-5 text-gray-400" /> Find people
+                </a>
+                <a href="{{ route('notifications.index') }}" role="menuitem" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-200 transition hover:bg-white/5 hover:text-white">
+                    <x-icon name="sparkles" class="size-5 text-gray-400" /> Notifications
+                </a>
+            @else
+                <a href="{{ route('welcome') }}" role="menuitem" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-brand-300 transition hover:bg-white/5">
+                    <x-icon name="user" class="size-5" /> Set up your profile
+                </a>
+            @endif
             <a href="{{ route('profile.edit') }}" role="menuitem" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-200 transition hover:bg-white/5 hover:text-white">
-                <x-icon name="user" class="size-5 text-gray-400" /> Profile
+                <x-icon name="adjustments" class="size-5 text-gray-400" /> Settings
             </a>
+            @can('moderate')
+                <a href="{{ route('admin.reports') }}" role="menuitem" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-200 transition hover:bg-white/5 hover:text-white">
+                    <x-icon name="info" class="size-5 text-gray-400" /> Reports
+                </a>
+            @endcan
             <a href="{{ route('watchlist.index') }}" role="menuitem" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-gray-200 transition hover:bg-white/5 hover:text-white">
                 <x-icon name="bookmark" class="size-5 text-gray-400" /> Watchlist
             </a>

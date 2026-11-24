@@ -20,6 +20,7 @@
 
     @include('layouts.footer')
 
+    @include('layouts.partials.social')
     <x-install-app />
 
     @livewireScripts

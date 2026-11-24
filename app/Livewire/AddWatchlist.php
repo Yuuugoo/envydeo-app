@@ -48,6 +48,12 @@ class AddWatchlist extends Component
             ]);
             $this->isInWatchlist = true;
             session()->flash('success', 'Added to watchlist!');
+
+            // Shows up in followers' feeds (only for people who've set up a social profile).
+            $user = Auth::user();
+            if ($user->username && ($movie = \App\Support\TitleSnapshot::fetch((int) $this->tmdbId))) {
+                \App\Models\Activity::record($user, 'watchlisted', null, ['movie' => $movie]);
+            }
         }
     }
 
