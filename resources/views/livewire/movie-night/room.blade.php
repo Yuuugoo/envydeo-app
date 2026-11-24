@@ -109,6 +109,8 @@
 
                         <div class="mt-6 flex flex-wrap gap-3">
                             <a href="#where-to-watch" class="btn-brand"><x-icon name="tv" class="size-5" /> Where to watch</a>
+                            {{-- Not watching on the same couch? Press play together. --}}
+                            <x-watch-along-button :tmdb-id="$match['id']" type="movie" />
                             <a href="{{ route('movie.show', $match['id']) }}" class="btn-glass"><x-icon name="info" class="size-5" /> Details</a>
                             @if ($isHost)
                                 <button type="button" wire:click="newRound" wire:loading.attr="disabled" class="btn-glass">

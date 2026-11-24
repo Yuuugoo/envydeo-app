@@ -145,6 +145,26 @@
 <section class="shell mt-24" aria-labelledby="social-heading">
     <h2 id="social-heading" class="max-w-2xl text-3xl font-extrabold tracking-tight text-white md:text-4xl">Movie night doesn’t end at the match</h2>
     <div class="mt-8 grid gap-4 lg:grid-cols-3">
+        {{-- Watch Along (featured) --}}
+        <article class="relative isolate grid items-center gap-6 overflow-hidden rounded-3xl bg-gradient-to-br from-sky-700/30 via-ink-900 to-fuchsia-900/20 p-6 ring-1 ring-sky-400/20 sm:p-8 lg:col-span-3 lg:grid-cols-[minmax(0,1fr)_22rem]">
+            <div>
+                <p class="text-xs font-bold uppercase tracking-[0.16em] text-sky-300">New · Watch Along</p>
+                <h3 class="mt-2 text-2xl font-extrabold text-white md:text-3xl">Not on the same couch? Press play together.</h3>
+                <p class="mt-2 max-w-xl text-sm leading-relaxed text-gray-300 md:text-base">
+                    Everyone opens the movie on their own streaming app. Envydeo counts you down (3, 2, 1, play), keeps one shared clock,
+                    and pins every 😱 and 😂 to the second it happened. When the credits roll, you get your group’s moment map.
+                </p>
+            </div>
+            <div aria-hidden="true" class="relative rounded-[1.5rem] bg-ink-950/70 p-5 text-center ring-1 ring-white/10">
+                <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-gray-400">You should be at</p>
+                <p class="mt-1 font-mono text-5xl font-black tabular-nums text-white">1:04:12</p>
+                <div class="mx-auto mt-3 h-1.5 max-w-[14rem] overflow-hidden rounded-full bg-white/10"><div class="h-full w-[46%] rounded-full bg-gradient-to-r from-brand-400 to-sky-400"></div></div>
+                <div class="mt-4 flex justify-center gap-2 text-2xl">😱 😂 😭 🔥 🤯 ❤️</div>
+                <span class="absolute right-6 top-4 rotate-6 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white">Kim 😱</span>
+                <span class="absolute left-6 top-16 -rotate-6 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-semibold text-white">Ben: no way</span>
+            </div>
+        </article>
+
         {{-- Tonight --}}
         <article class="flex flex-col rounded-3xl bg-ink-900/70 p-6 ring-1 ring-white/5">
             <div aria-hidden="true" class="flex items-center gap-3">

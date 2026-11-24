@@ -115,6 +115,9 @@ class TonightHome extends Component
             'groups' => $feed->tonight($viewer),
             'overlaps' => $this->overlaps($viewer, $graph, $tmdb),
             'rooms' => $rooms,
+            'parties' => \App\Models\WatchParty::active()
+                ->whereHas('members', fn ($q) => $q->where('user_id', $viewer->id))
+                ->withCount('members')->latest()->limit(4)->get(),
             'lately' => $feed->activities($viewer, 12)->reject(fn ($a) => $a->type === 'checked_in')->take(5)->values(),
             'friendCount' => count($graph->friendIds($viewer)),
         ]);

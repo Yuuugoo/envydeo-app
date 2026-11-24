@@ -94,6 +94,7 @@
                             <x-icon name="sparkles" class="size-5" /> Watching tonight
                         </button>
                     @endauth
+                    <x-watch-along-button :tmdb-id="$tvShow['id']" type="tv" :seasons="$tvShow['number_of_seasons'] ?? 1" />
                 </div>
             </div>
         </div>

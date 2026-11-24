@@ -4,8 +4,8 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 
-// Delete expired Movie Night rooms (and their participants/votes via cascade).
-Schedule::command('model:prune', ['--model' => [\App\Models\MatchRoom::class]])->daily();
+// Delete expired Movie Night rooms and Watch Alongs (members, votes and reactions go with them via cascade).
+Schedule::command('model:prune', ['--model' => [\App\Models\MatchRoom::class, \App\Models\WatchParty::class]])->daily();
 
 // Offline IP → country database for "Where to watch" (DB-IP Lite, CC BY 4.0, refreshed monthly).
 Artisan::command('envydeo:geoip', function () {

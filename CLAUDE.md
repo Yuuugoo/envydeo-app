@@ -151,6 +151,30 @@ Friends swipe the same deck of movies, each on their own device. The first movie
 - **QR code:** `bacon/bacon-qr-code` renders an inline SVG in the lobby, and in "Us" rooms while waiting for the partner.
 - **Stats:** `movie_night_events` stores anonymous events with no names, emails, IPs or user ids. `/movie-night/stats` is gated by `view-movie-night-stats`, meaning emails listed in the `ADMIN_EMAILS` env var (`config/envydeo.php`).
 
+## Watch Along (`/watch/{code}`): watching together, apart
+
+Friends each open the same title on **their own** streaming service. Envydeo runs a shared clock, a "3, 2, 1, press play" countdown and timestamped reactions. **No video is ever streamed or embedded.**
+
+- **Code:**
+  - `WatchAlongController`: create, join, and the JSON endpoints `state`, `react`, `control` and `invite`.
+  - Models: `WatchParty`, `WatchPartyMember`, `WatchPartyReaction` and `TitleMoment`.
+  - The page is `watch-along/show.blade.php` (with `partials/summary`). Alpine `watchAlong` lives in `resources/js/components/watch-along.js`.
+  - Entry points: `<x-watch-along-button>` on movie and TV pages (TV asks for season and episode), the Movie Night match screen, and "Your rooms" on the Tonight home.
+- **Clock:**
+  - `position = base_ms (+ now − resumed_at_ms while playing)`, all in server epoch ms.
+  - A `resumed_at_ms` in the future *is* the countdown: 5s on start, 3s on resume.
+  - Clients poll `/state` about every 1.5s, estimate the clock offset from the lowest-RTT sample, and tick locally. The personal ±5s "nudge" is display-only and stored in localStorage.
+- **Rules (covered in `tests/Feature/WatchAlongTest.php`):**
+  - Hosting needs an account; guests join by name, using a session token like Movie Night. A leftover token is never honoured for another account.
+  - Only the host can start, shift (±30s, never before 0:00) or end. Anyone can pause or resume.
+  - Reactions are only accepted while playing or paused. Their position is computed **on the server**. They are rate-limited.
+  - A party ends by itself 20 minutes after the runtime. Rooms are pruned after 24h (`model:prune`, daily).
+- **After the credits:**
+  - Members see a moment map (bars across the runtime, top moments with names, and a replay). Non-members only see "ended".
+  - Signed-in members who watched at least 5 minutes get a `watched_along` activity (friends visibility), with names of account members only and a guest count.
+- **Envydeo moments:** every emoji reaction bumps `title_moments`, which holds anonymous per-minute counts by kind. Title pages show a strip plus peak moments ("Jumpiest moment: 1:04:00") once a title has at least 10 reactions.
+- **Production note:** each viewer polls every 1.5s. Run PHP-FPM with several workers; `artisan serve` handles one request at a time.
+
 ## Social layer (followers, Tonight check-ins, diary, feed)
 
 - **Privacy rules live in one place:** `App\Services\SocialGraph`, registered as a `scoped` singleton and memoised per request.

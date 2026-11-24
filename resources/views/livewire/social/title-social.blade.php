@@ -39,6 +39,39 @@
             @endif
         </div>
 
+        {{-- Envydeo moments: anonymous reaction totals from every Watch Along of this title --}}
+        @if ($moments)
+            @php
+                $kinds = \App\Models\WatchPartyReaction::KINDS;
+                $maxBar = max(1, collect($moments['bars'])->max('count'));
+                $barColor = ['scream' => 'bg-violet-400', 'laugh' => 'bg-amber-300', 'cry' => 'bg-sky-400', 'fire' => 'bg-orange-400', 'mind' => 'bg-fuchsia-400', 'love' => 'bg-rose-400'];
+                $byMinute = collect($moments['bars'])->keyBy('minute');
+                $minutes = max(1, $moments['lastMinute'] + 1);
+                $step = max(1, (int) ceil($minutes / 90));
+            @endphp
+            <div class="mt-3 rounded-2xl bg-white/[0.03] p-4 ring-1 ring-white/5">
+                <div class="flex flex-wrap items-baseline justify-between gap-2">
+                    <p class="text-sm font-bold text-white">🎬 Envydeo moments</p>
+                    <p class="text-xs text-gray-500">{{ number_format($moments['total']) }} reactions from Watch Alongs</p>
+                </div>
+                <div class="mt-3 flex h-14 items-end gap-px" aria-hidden="true">
+                    @for ($m = 0; $m < $minutes; $m += $step)
+                        @php
+                            $slice = collect(range($m, $m + $step - 1))->map(fn ($x) => $byMinute[$x] ?? null)->filter();
+                            $count = $slice->sum('count');
+                            $kind = $slice->sortByDesc('count')->first()['kind'] ?? null;
+                        @endphp
+                        <span class="min-w-0 flex-1 rounded-t-sm {{ $count ? ($barColor[$kind] ?? 'bg-brand-400') : 'bg-white/5' }}" style="height: {{ $count ? max(10, 100 * $count / ($maxBar * $step)) : 4 }}%"></span>
+                    @endfor
+                </div>
+                <ul class="mt-3 flex flex-wrap gap-2 text-xs text-gray-300">
+                    @foreach ($moments['peaks'] as $peak)
+                        <li class="rounded-full bg-white/5 px-3 py-1 ring-1 ring-white/10">{{ $kinds[$peak['kind']][0] ?? '' }} {{ \App\Models\WatchPartyReaction::PEAKS[$peak['kind']] ?? 'Big moment' }}: <strong class="text-white">{{ \App\Models\WatchParty::formatTime($peak['minute'] * 60) }}</strong></li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <dl class="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
             @if ($tmdbRating)
                 <div class="rounded-2xl bg-white/[0.03] p-4 ring-1 ring-white/5">

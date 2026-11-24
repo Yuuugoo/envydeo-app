@@ -80,6 +80,7 @@
                             <x-icon name="sparkles" class="size-5" /> Watching tonight
                         </button>
                     @endauth
+                    <x-watch-along-button :tmdb-id="$movie['id']" type="movie" />
 
                     @if ($trailer)
                         <x-video-modal show="trailerOpen" src="'https://www.youtube.com/embed/{{ $trailer['key'] }}?autoplay=1'" close="trailerOpen = false" label="Trailer" />

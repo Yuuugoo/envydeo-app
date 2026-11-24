@@ -132,6 +132,7 @@ class TitleSocial extends Component
             'verdictTotal' => $verdictTotal,
             'recommendPct' => $verdictTotal ? (int) round(100 * $verdicts->only(DiaryEntry::RECOMMEND)->sum() / $verdictTotal) : null,
             'bestWithFriends' => (clone $base)->where('best_with_friends', true)->count(),
+            'moments' => \App\Models\TitleMoment::summary($this->tmdbId, $this->type),
             'tmdbReviews' => $tmdbReviews,
             'links' => array_filter([
                 'IMDb' => $this->imdbId ? "https://www.imdb.com/title/{$this->imdbId}/" : null,

@@ -113,10 +113,21 @@
     </section>
 
     {{-- ============================================================ YOUR ROOMS --}}
-    @if ($rooms->isNotEmpty())
+    @if ($rooms->isNotEmpty() || $parties->isNotEmpty())
         <section aria-labelledby="rooms-heading">
             <h2 id="rooms-heading" class="section-title">Your rooms</h2>
             <ul class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                @foreach ($parties as $party)
+                    <li wire:key="party-{{ $party->id }}">
+                        <a href="{{ route('watch-along.show', $party->code) }}" class="flex items-center justify-between gap-3 rounded-2xl bg-gradient-to-br from-sky-700/25 to-ink-900 p-4 ring-1 ring-sky-400/20 transition hover:ring-sky-300/50">
+                            <span class="min-w-0">
+                                <span class="block truncate text-sm font-bold text-white">🎬 {{ $party->title() }}</span>
+                                <span class="block text-xs text-gray-400">{{ ['lobby' => 'Watch Along · getting ready', 'playing' => 'Watch Along · live now', 'paused' => 'Watch Along · paused'][$party->status] ?? 'Watch Along' }} · {{ $party->members_count }} {{ \Illuminate\Support\Str::plural('person', $party->members_count) }}</span>
+                            </span>
+                            <span class="rounded-lg bg-white/5 px-2 py-1 font-mono text-xs font-bold tracking-widest text-gray-300">{{ $party->code }}</span>
+                        </a>
+                    </li>
+                @endforeach
                 @foreach ($rooms as $room)
                     @php
                         $label = $room->is_persistent ? '💑 Us room' : (['lobby' => 'Waiting in the lobby', 'voting' => 'Swiping now', 'matched' => 'Matched'][$room->status] ?? $room->status);

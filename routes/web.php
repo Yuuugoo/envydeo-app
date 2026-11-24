@@ -11,6 +11,7 @@ use App\Http\Controllers\ShowsController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\WatchlistController;
+use App\Http\Controllers\WatchAlongController;
 use App\Http\Controllers\OAuthProviderController;
 
 Route::get('/', [MovieController::class, 'index'])->name('movie.index');
@@ -61,6 +62,17 @@ Route::middleware('auth')->group(function () {
 Route::get('/@{username}', [UserProfileController::class, 'show'])->where('username', '[a-z0-9_.]+')->name('profile.show');
 Route::get('/@{username}/{list}', [UserProfileController::class, 'connections'])
     ->where(['username' => '[a-z0-9_.]+', 'list' => 'followers|following'])->name('profile.connections');
+
+// Watch Along: shared movie clock + timestamped reactions (no video is streamed)
+Route::post('/watch-along', [WatchAlongController::class, 'store'])->middleware(['auth', 'throttle:10,1'])->name('watch-along.store');
+Route::prefix('watch/{code}')->where(['code' => '[A-Za-z0-9]{6}'])->name('watch-along.')->group(function () {
+    Route::get('/', [WatchAlongController::class, 'show'])->name('show');
+    Route::post('/join', [WatchAlongController::class, 'join'])->middleware('throttle:20,1')->name('join');
+    Route::get('/state', [WatchAlongController::class, 'state'])->middleware('throttle:150,1')->name('state');
+    Route::post('/react', [WatchAlongController::class, 'react'])->middleware('throttle:90,1')->name('react');
+    Route::post('/control', [WatchAlongController::class, 'control'])->middleware('throttle:40,1')->name('control');
+    Route::post('/invite', [WatchAlongController::class, 'invite'])->middleware(['auth', 'throttle:30,1'])->name('invite');
+});
 
 // Movie Night Matcher
 Route::prefix('movie-night')->name('movie-night.')->group(function () {

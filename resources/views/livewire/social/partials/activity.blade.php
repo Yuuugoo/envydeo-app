@@ -40,6 +40,45 @@
         </article>
         @break
 
+    @case('watched_along')
+        {{-- A finished Watch Along (data is a snapshot: the party itself expires after a day) --}}
+        @php
+            $with = collect($data['with'] ?? []);
+            $guests = (int) ($data['guests'] ?? 0);
+            $kinds = \App\Models\WatchPartyReaction::KINDS;
+        @endphp
+        <article class="relative isolate flex items-center gap-4 overflow-hidden rounded-3xl bg-gradient-to-br from-sky-700/30 via-ink-900 to-ink-900 p-4 ring-1 ring-sky-400/20">
+            @if ($movie && !empty($movie['poster_path']))
+                <a href="{{ \App\Support\TitleSnapshot::url($movie) }}" class="shrink-0">
+                    <img src="https://image.tmdb.org/t/p/w154{{ $movie['poster_path'] }}" alt="{{ $movie['title'] }}" class="w-14 rotate-2 rounded-lg shadow-xl ring-2 ring-white/20">
+                </a>
+            @endif
+            <div class="min-w-0 flex-1">
+                <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-sky-300">🎬 Watched together</p>
+                <p class="mt-1 text-sm text-gray-200">
+                    <a href="{{ $actor->profileUrl() }}" class="font-bold text-white hover:text-brand-300">{{ $isMe ? 'You' : $actor->name }}</a>
+                    @if ($with->isNotEmpty() || $guests)
+                        &amp;
+                        @foreach ($with->take(2) as $i => $w)
+                            <a href="{{ route('profile.show', $w['username']) }}" class="font-bold text-white hover:text-brand-300">{{ $w['name'] }}</a>{{ $i === 0 && $with->count() > 1 ? ',' : '' }}
+                        @endforeach
+                        @php $more = max(0, $with->count() - 2) + $guests; @endphp
+                        @if ($more) {{ $with->isNotEmpty() ? '+' : '' }}{{ $more }} {{ $with->isEmpty() ? \Illuminate\Support\Str::plural('friend', $more) : 'more' }} @endif
+                    @endif
+                    watched <a href="{{ \App\Support\TitleSnapshot::url($movie) }}" class="font-bold text-white hover:text-brand-300">{{ $data['title'] ?? ($movie['title'] ?? '') }}</a> together
+                </p>
+                @if (!empty($data['reactions']))
+                    <p class="mt-1 flex flex-wrap gap-x-2 text-xs text-gray-300">
+                        @foreach (array_slice($data['reactions'], 0, 4, true) as $kind => $n)
+                            <span>{{ $kinds[$kind][0] ?? '' }} {{ $n }}</span>
+                        @endforeach
+                    </p>
+                @endif
+                <p class="mt-0.5 text-xs text-gray-500">{{ $activity->created_at->diffForHumans() }}</p>
+            </div>
+        </article>
+        @break
+
     @default
         <article class="flex items-center gap-3 rounded-2xl bg-ink-900/50 p-3 ring-1 ring-white/5">
             <a href="{{ $actor->profileUrl() }}"><x-avatar :user="$actor" size="sm" /></a>
